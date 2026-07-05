@@ -34,8 +34,9 @@
     <div id="appContent" class="transition-opacity duration-500">
         <header class="bg-[#047857] text-white pt-6 pb-20 px-4 md:px-8 rounded-b-[2rem] shadow-lg relative">
             <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-3 bg-black/10 px-4 py-2 rounded-xl border border-white/10 w-full md:w-auto justify-between md:justify-start">
-                    <div class="flex items-center gap-2">
+                
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-start">
+                    <div class="flex items-center gap-2 bg-black/10 px-4 py-2 rounded-xl border border-white/10">
                         <div class="w-8 h-8 rounded-full border border-white/20 bg-emerald-800 flex items-center justify-center text-white text-xs">
                             <i class="fa-solid fa-database"></i>
                         </div>
@@ -44,6 +45,10 @@
                             <p class="text-[10px] text-emerald-200 mt-1">تخزين آمن ومباشر</p>
                         </div>
                     </div>
+
+                    <button id="installBtn" onclick="triggerPwaInstall()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-md border border-amber-400 animate-pulse">
+                        <i class="fa-solid fa-mobile-screen-button"></i> تثبيت على الشاشة
+                    </button>
                 </div>
                 
                 <div class="text-center md:text-right flex items-center gap-3">
@@ -205,11 +210,38 @@
     </div>
 
     <script>
-        // مصفوفات حفظ البيانات المحلية بالكامل
         let people = [];
         let receipts = [];
+        let deferredPrompt;
 
-        // تحميل البيانات من ذاكرة المتصفح المحلية فور فتح الصفحة مباشرة
+        // التقاط حدث التثبيت وتفعيل الزر
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.getElementById('installBtn');
+            if (installBtn) {
+                installBtn.classList.remove('hidden');
+            }
+        });
+
+        function triggerPwaInstall() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('تم قبول التثبيت من قبل المستخدم');
+                }
+                deferredPrompt = null;
+                document.getElementById('installBtn').classList.add('hidden');
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            console.log('تم تثبيت التطبيق بنجاح على الشاشة الرئيسية');
+            document.getElementById('installBtn').classList.add('hidden');
+        });
+
+        // تحميل البيانات من ذاكرة المتصفح المحلية
         function loadLocalData() {
             const storedPeople = localStorage.getItem('local_ledger_people');
             const storedReceipts = localStorage.getItem('local_ledger_receipts');
@@ -220,7 +252,7 @@
             renderAll();
         }
 
-        // حفظ وتحديث فوري في المتصفح محلياً
+        // حفظ البيانات محلياً
         function saveToLocalStorage() {
             localStorage.setItem('local_ledger_people', JSON.stringify(people));
             localStorage.setItem('local_ledger_receipts', JSON.stringify(receipts));
@@ -561,7 +593,6 @@
             }).join('');
         }
 
-        // تشغيل النظام المحلي فور فتح الصفحة مباشرة
         window.onload = loadLocalData;
     </script>
 </body>
