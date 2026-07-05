@@ -35,65 +35,25 @@
 </head>
 <body class="min-h-screen flex flex-col pb-24">
 
-    <div id="loginScreen" class="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center p-4">
-        <div class="bg-white/5 backdrop-blur-md p-8 rounded-3xl border border-white/10 w-full max-w-md shadow-2xl">
-            <div class="bg-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-4 shadow-lg shadow-emerald-900/50">
-                <i class="fa-solid fa-wallet"></i>
-            </div>
-            <h2 class="text-white text-xl font-bold mb-2 text-center">دفتر القبض والصرف الذكي</h2>
-            <p class="text-gray-400 text-xs mb-6 text-center">بالدينار العراقي - نظام الحسابات السحابي الآمن</p>
-            
-            <div class="space-y-4 text-right">
-                <div>
-                    <label class="block text-xs text-gray-300 mb-1 mr-1">البريد الإلكتروني</label>
-                    <input type="email" id="authEmail" placeholder="name@example.com" class="w-full p-3 rounded-xl bg-white/10 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-left" style="direction: ltr;">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-300 mb-1 mr-1">كلمة المرور</label>
-                    <input type="password" id="authPassword" placeholder="••••••••" class="w-full p-3 rounded-xl bg-white/10 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-left" style="direction: ltr;">
-                </div>
-                
-                <button id="mainAuthBtn" onclick="handleAuth()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl font-semibold text-sm transition mt-2 shadow-lg flex items-center justify-center gap-2">
-                    <span id="authBtnText">تسجيل الدخول</span>
-                    <i class="fa-solid fa-right-to-bracket text-xs"></i>
-                </button>
-
-                <div class="text-center mt-4">
-                    <p id="authToggleText" class="text-xs text-gray-400">
-                        ليس لديك حساب؟ 
-                        <button onclick="toggleAuthMode(true)" class="text-emerald-400 hover:underline font-bold focus:outline-none">إنشاء حساب جديد</button>
-                    </p>
-                    <p id="authToggleTextBack" class="text-xs text-gray-400 hidden">
-                        لديك حساب بالفعل؟ 
-                        <button onclick="toggleAuthMode(false)" class="text-emerald-400 hover:underline font-bold focus:outline-none">تسجيل الدخول</button>
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="appContent" class="opacity-0 transition-opacity duration-500 pointer-events-none">
+    <div id="appContent" class="transition-opacity duration-500">
         <header class="bg-[#047857] text-white pt-6 pb-20 px-4 md:px-8 rounded-b-[2rem] shadow-lg relative">
             <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-3 bg-black/10 px-4 py-2 rounded-xl border border-white/10 w-full md:w-auto justify-between md:justify-start">
                     <div class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-full border border-white/20 bg-emerald-800 flex items-center justify-center text-white text-xs">
-                            <i class="fa-solid fa-user"></i>
+                            <i class="fa-solid fa-cloud"></i>
                         </div>
                         <div class="text-right">
-                            <p id="userName" class="text-xs font-bold leading-none"></p>
-                            <p class="text-[10px] text-emerald-200 mt-1">حساب نشط</p>
+                            <p class="text-xs font-bold leading-none">المزامنة السحابية</p>
+                            <p class="text-[10px] text-emerald-200 mt-1">متصل ونشط</p>
                         </div>
                     </div>
-                    <button onclick="logout()" class="text-xs bg-red-600/20 hover:bg-red-600 text-red-200 hover:text-white px-2 py-1 rounded-md transition border border-red-500/30">
-                        خروج <i class="fa-solid fa-right-from-bracket mr-1"></i>
-                    </button>
                 </div>
                 
                 <div class="text-center md:text-right flex items-center gap-3">
                     <div>
                         <h1 class="text-2xl font-bold">دفتر القبض والصرف</h1>
-                        <p class="text-xs text-emerald-200 mt-1">بالدينار العراقي - نظام ذكي متكامل</p>
+                        <p class="text-xs text-emerald-200 mt-1">بالدينار العراقي - نظام ذكي مباشر</p>
                     </div>
                     <div class="bg-white/10 p-3 rounded-full text-xl flex items-center justify-center">
                         <i class="fa-solid fa-wallet"></i>
@@ -249,7 +209,7 @@
     </div>
 
     <script>
-        // تكوين وإعداد نظام Firebase لربط مشروعك السحابي wal01
+        // إعدادات مشروعك السحابي wal01
         const firebaseConfig = {
             apiKey: "AIzaSyBYH8QI0VSsSpt8c4jMIuT6r8Rg82A1CIU",
             authDomain: "wal01-8c047.firebaseapp.com",
@@ -260,101 +220,38 @@
             measurementId: "G-T8P0Z7YJDP"
         };
 
-        // تهيئة الخدمات السحابية
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const db = firebase.firestore();
 
         let people = [];
         let receipts = [];
-        let isSignUpMode = false;
-        let currentUser = null;
+        
+        // مسار سحابي ثابت ومباشر لحسابك دون الحاجة لتسجيل دخول مرئي
+        const userCloudDoc = db.collection('users').doc('main_ledger_user');
 
-        // التبديل بين وضع تسجيل الدخول وإنشاء الحساب
-        function toggleAuthMode(signUp) {
-            isSignUpMode = signUp;
-            document.getElementById('authBtnText').innerText = signUp ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
-            if(signUp) {
-                document.getElementById('authToggleText').classList.add('hidden');
-                document.getElementById('authToggleTextBack').classList.remove('hidden');
+        // جلب البيانات ومزامنتها لحظياً فور فتح الواجهة مباشرة
+        userCloudDoc.onSnapshot(doc => {
+            if(doc.exists) {
+                const data = doc.data();
+                people = data.people || [];
+                receipts = data.receipts || [];
             } else {
-                document.getElementById('authToggleText').classList.remove('hidden');
-                document.getElementById('authToggleTextBack').classList.add('hidden');
+                people = [];
+                receipts = [];
             }
-        }
-
-        // معالجة وتدقيق عمليات الحسابات السحابية
-        function handleAuth() {
-            const email = document.getElementById('authEmail').value.trim();
-            const password = document.getElementById('authPassword').value.trim();
-            const btn = document.getElementById('mainAuthBtn');
-
-            if(!email || !password) return alert('الرجاء ملء حقول البريد الإلكتروني وكلمة المرور');
-            if(password.length < 6) return alert('يجب ألا تقل كلمة المرور عن 6 رموز');
-
-            btn.disabled = true;
-            btn.style.opacity = "0.7";
-
-            if (isSignUpMode) {
-                auth.createUserWithEmailAndPassword(email, password)
-                    .then(() => { alert('تم إنشاء حسابك السحابي بنجاح!'); })
-                    .catch(err => { alert('خطأ في إنشاء الحساب: ' + err.message); btn.disabled = false; btn.style.opacity = "1"; });
-            } else {
-                auth.signInWithEmailAndPassword(email, password)
-                    .catch(err => { alert('خطأ في الدخول: تأكد من البيانات المرسلة. ' + err.message); btn.disabled = false; btn.style.opacity = "1"; });
-            }
-        }
-
-        // مراقبة حالة الجلسة وتأمين الواجهات الحية والتزامن السحابي الفوري
-        auth.onAuthStateChanged(user => {
-            const loginScreen = document.getElementById('loginScreen');
-            const appContent = document.getElementById('appContent');
-            const btn = document.getElementById('mainAuthBtn');
-            
-            btn.disabled = false; 
-            btn.style.opacity = "1";
-
-            if(user) {
-                currentUser = user;
-                document.getElementById('userName').innerText = user.email.split('@')[0];
-                loginScreen.classList.add('hidden');
-                appContent.classList.remove('opacity-0', 'pointer-events-none');
-                
-                // الاستماع والتزامن الحي المباشر مع قاعدة بيانات Firestore السحابية لكل مستخدم على حدة
-                db.collection('users').doc(user.uid).onSnapshot(doc => {
-                    if(doc.exists) {
-                        const data = doc.data();
-                        people = data.people || [];
-                        receipts = data.receipts || [];
-                    } else {
-                        people = [];
-                        receipts = [];
-                    }
-                    renderAll();
-                });
-            } else {
-                currentUser = null;
-                loginScreen.classList.remove('hidden');
-                appContent.classList.add('opacity-0', 'pointer-events-none');
-            }
+            renderAll();
+        }, err => {
+            console.error("خطأ مزامنة السحابة: ", err);
         });
 
-        function logout() {
-            auth.signOut().then(() => {
-                location.reload();
-            });
-        }
-
-        // حفظ وتحديث البيانات في سحابة Firestore مباشرة
+        // مزامنة وحفظ فوري في السحابة
         function syncDataToCloud() {
-            if(currentUser) {
-                db.collection('users').doc(currentUser.uid).set({
-                    people: people,
-                    receipts: receipts
-                }, { merge: true }).catch(err => {
-                    console.error("خطأ أثناء مزامنة البيانات سحابياً: ", err);
-                });
-            }
+            userCloudDoc.set({
+                people: people,
+                receipts: receipts
+            }, { merge: true }).catch(err => {
+                alert("تعذر الحفظ في السحابة: " + err.message);
+            });
         }
 
         function formatMoney(amount) {
