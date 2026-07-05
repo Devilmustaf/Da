@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>دفتر القبض والصرف الاحترافي</title>
+    
+    <!-- تهيئة خصائص العرض للتطبيق المستقل -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#047857">
+    <meta name="apple-mobile-web-app-title" content="دفتر الحسابات">
+    <meta name="theme-color" content="#047857">
+
+    <!-- ربط ملف الـ Manifest الخارجي الرسمي -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- المكتبات الخارجية -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -16,7 +27,6 @@
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow: hidden; }
         
-        /* قالب التصدير الرسمي للصورة */
         .invoice-print-template {
             display: none;
             width: 480px;
@@ -46,8 +56,9 @@
                         </div>
                     </div>
 
-                    <button id="installBtn" onclick="triggerPwaInstall()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-md border border-amber-400 animate-pulse">
-                        <i class="fa-solid fa-mobile-screen-button"></i> تثبيت على الشاشة
+                    <!-- زر التثبيت الذكي -->
+                    <button id="installBtn" onclick="triggerPwaInstall()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-md border border-amber-400 animate-pulse">
+                        <i class="fa-solid fa-mobile-screen-button text-sm"></i> تثبيت على الشاشة الرئيسية
                     </button>
                 </div>
                 
@@ -136,6 +147,7 @@
 
     <div id="printCaptureContainer" class="fixed top-[-9999px] left-[-9999px]"></div>
 
+    <!-- النافذة المنبثقة لإضافة شخص -->
     <div id="personModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
         <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-lg z-50 overflow-y-auto p-6 text-right">
@@ -163,6 +175,7 @@
         </div>
     </div>
 
+    <!-- النافذة المنبثقة لإضافة وصل -->
     <div id="receiptModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
         <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-lg z-50 overflow-y-auto p-6 text-right">
@@ -214,22 +227,41 @@
         let receipts = [];
         let deferredPrompt;
 
-        // التقاط حدث التثبيت وتفعيل الزر
+        // تسجيل ملف الـ Service Worker الخارجي بشكل رسمي
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('تم تسجيل Service Worker الخارجي بنجاح'))
+                .catch(err => console.log('فشل تسجيل الـ Service Worker:', err));
+            });
+        }
+
+        // التقاط حدث التثبيت الفوري الرسمي من المتصفح
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             const installBtn = document.getElementById('installBtn');
             if (installBtn) {
-                installBtn.classList.remove('hidden');
+                installBtn.classList.remove('hidden'); 
+            }
+        });
+
+        // التحقق في حال كان التطبيق مثبتاً بالفعل
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+                document.getElementById('installBtn').classList.add('hidden');
             }
         });
 
         function triggerPwaInstall() {
-            if (!deferredPrompt) return;
+            if (!deferredPrompt) {
+                alert('لتثبيت التطبيق على جهازك:\n- على الأندرويد/جوجل كروم: اضغط على النقاط الثلاث بالأعلى ثم اختر "إضافة إلى الشاشة الرئيسية".\n- على الآيفون: اضغط على زر المشاركة بقاع متصفح Safari ثم اختر "إضافة إلى الشاشة الرئيسية".');
+                return;
+            }
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then((choiceResult) => {
                 if (choiceResult.outcome === 'accepted') {
-                    console.log('تم قبول التثبيت من قبل المستخدم');
+                    console.log('وافق المستخدم على التثبيت');
                 }
                 deferredPrompt = null;
                 document.getElementById('installBtn').classList.add('hidden');
@@ -237,11 +269,10 @@
         }
 
         window.addEventListener('appinstalled', () => {
-            console.log('تم تثبيت التطبيق بنجاح على الشاشة الرئيسية');
             document.getElementById('installBtn').classList.add('hidden');
+            alert('تم تثبيت دفتر القبض والصرف بنجاح على جهازك!');
         });
 
-        // تحميل البيانات من ذاكرة المتصفح المحلية
         function loadLocalData() {
             const storedPeople = localStorage.getItem('local_ledger_people');
             const storedReceipts = localStorage.getItem('local_ledger_receipts');
@@ -252,7 +283,6 @@
             renderAll();
         }
 
-        // حفظ البيانات محلياً
         function saveToLocalStorage() {
             localStorage.setItem('local_ledger_people', JSON.stringify(people));
             localStorage.setItem('local_ledger_receipts', JSON.stringify(receipts));
@@ -454,7 +484,7 @@
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">طبيعة السند:</span>
-                            <span style="font-size: 0.9rem; font-600; color: #334155;">${isKabid ? 'قبض مالي (+)' : 'صرف مالي (-)'}</span>
+                            <span style="font-size: 0.9rem; font-weight: 600; color: #334155;">${isKabid ? 'قبض مالي (+)' : 'صرف مالي (-)'}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">الجهة/الاسم:</span>
