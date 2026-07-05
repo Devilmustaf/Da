@@ -9,8 +9,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link href="https://fonts.googleapis.com/css2=family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
@@ -33,28 +36,37 @@
 <body class="min-h-screen flex flex-col pb-24">
 
     <div id="loginScreen" class="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center p-4">
-        <div class="bg-white/5 backdrop-blur-md p-8 rounded-3xl border border-white/10 w-full max-w-md text-center shadow-2xl">
+        <div class="bg-white/5 backdrop-blur-md p-8 rounded-3xl border border-white/10 w-full max-w-md shadow-2xl">
             <div class="bg-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-4 shadow-lg shadow-emerald-900/50">
                 <i class="fa-solid fa-wallet"></i>
             </div>
-            <h2 class="text-white text-xl font-bold mb-2">دفتر القبض والصرف الذكي</h2>
-            <p class="text-gray-400 text-xs mb-8">بالدينار العراقي - يرجى إثبات هويتك للوصول إلى الدفتر المالي</p>
+            <h2 class="text-white text-xl font-bold mb-2 text-center">دفتر القبض والصرف الذكي</h2>
+            <p class="text-gray-400 text-xs mb-6 text-center">بالدينار العراقي - نظام الحسابات السحابي الآمن</p>
             
-            <div class="flex justify-center" id="googleBtnContainer">
-                <div id="g_id_onload"
-                     data-client_id="477503911817-g12v4al7cc1hkssf1s4opr0h8saq3ra7.apps.googleusercontent.com"
-                     data-context="signin"
-                     data-ux_mode="popup"
-                     data-callback="handleCredentialResponse"
-                     data-auto_select="false">
+            <div class="space-y-4 text-right">
+                <div>
+                    <label class="block text-xs text-gray-300 mb-1 mr-1">البريد الإلكتروني</label>
+                    <input type="email" id="authEmail" placeholder="name@example.com" class="w-full p-3 rounded-xl bg-white/10 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-left" style="direction: ltr;">
                 </div>
-                <div class="g_id_signin"
-                     data-type="standard"
-                     data-shape="rectangular"
-                     data-theme="filled_blue"
-                     data-text="signin_with"
-                     data-size="large"
-                     data-logo_alignment="left">
+                <div>
+                    <label class="block text-xs text-gray-300 mb-1 mr-1">كلمة المرور</label>
+                    <input type="password" id="authPassword" placeholder="••••••••" class="w-full p-3 rounded-xl bg-white/10 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-left" style="direction: ltr;">
+                </div>
+                
+                <button id="mainAuthBtn" onclick="handleAuth()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl font-semibold text-sm transition mt-2 shadow-lg flex items-center justify-center gap-2">
+                    <span id="authBtnText">تسجيل الدخول</span>
+                    <i class="fa-solid fa-right-to-bracket text-xs"></i>
+                </button>
+
+                <div class="text-center mt-4">
+                    <p id="authToggleText" class="text-xs text-gray-400">
+                        ليس لديك حساب؟ 
+                        <button onclick="toggleAuthMode(true)" class="text-emerald-400 hover:underline font-bold focus:outline-none">إنشاء حساب جديد</button>
+                    </p>
+                    <p id="authToggleTextBack" class="text-xs text-gray-400 hidden">
+                        لديك حساب بالفعل؟ 
+                        <button onclick="toggleAuthMode(false)" class="text-emerald-400 hover:underline font-bold focus:outline-none">تسجيل الدخول</button>
+                    </p>
                 </div>
             </div>
         </div>
@@ -65,7 +77,9 @@
             <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-3 bg-black/10 px-4 py-2 rounded-xl border border-white/10 w-full md:w-auto justify-between md:justify-start">
                     <div class="flex items-center gap-2">
-                        <img id="userAvatar" src="" class="w-8 h-8 rounded-full border border-white/20" alt="صورة المستخدم">
+                        <div class="w-8 h-8 rounded-full border border-white/20 bg-emerald-800 flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
                         <div class="text-right">
                             <p id="userName" class="text-xs font-bold leading-none"></p>
                             <p class="text-[10px] text-emerald-200 mt-1">حساب نشط</p>
@@ -235,59 +249,112 @@
     </div>
 
     <script>
-        let people = JSON.parse(localStorage.getItem('ledger_people')) || [];
-        let receipts = JSON.parse(localStorage.getItem('ledger_receipts')) || [];
+        // تكوين وإعداد نظام Firebase لربط مشروعك السحابي wal01
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYH8QI0VSsSpt8c4jMIuT6r8Rg82A1CIU",
+            authDomain: "wal01-8c047.firebaseapp.com",
+            projectId: "wal01-8c047",
+            storageBucket: "wal01-8c047.firebasestorage.app",
+            messagingSenderId: "860670299599",
+            appId: "1:860670299599:web:94c52ff1eefde1ec9e56ba",
+            measurementId: "G-T8P0Z7YJDP"
+        };
 
-        // إدارة التحقق من صحة تسجيل دخول جوجل وفك التشفير الأساسي للجلسة البسيطة
-        function parseJwt(token) {
-            try {
-                var base64Url = token.split('.')[1];
-                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
-            } catch(e) {
-                return null;
+        // تهيئة الخدمات السحابية
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let people = [];
+        let receipts = [];
+        let isSignUpMode = false;
+        let currentUser = null;
+
+        // التبديل بين وضع تسجيل الدخول وإنشاء الحساب
+        function toggleAuthMode(signUp) {
+            isSignUpMode = signUp;
+            document.getElementById('authBtnText').innerText = signUp ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
+            if(signUp) {
+                document.getElementById('authToggleText').classList.add('hidden');
+                document.getElementById('authToggleTextBack').classList.remove('hidden');
+            } else {
+                document.getElementById('authToggleText').classList.remove('hidden');
+                document.getElementById('authToggleTextBack').classList.add('hidden');
             }
         }
 
-        function handleCredentialResponse(response) {
-            const responsePayload = parseJwt(response.credential);
-            if(responsePayload) {
-                localStorage.setItem('ledger_user_session', JSON.stringify({
-                    name: responsePayload.name,
-                    picture: responsePayload.picture
-                }));
-                checkAuth();
+        // معالجة وتدقيق عمليات الحسابات السحابية
+        function handleAuth() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            const btn = document.getElementById('mainAuthBtn');
+
+            if(!email || !password) return alert('الرجاء ملء حقول البريد الإلكتروني وكلمة المرور');
+            if(password.length < 6) return alert('يجب ألا تقل كلمة المرور عن 6 رموز');
+
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+
+            if (isSignUpMode) {
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then(() => { alert('تم إنشاء حسابك السحابي بنجاح!'); })
+                    .catch(err => { alert('خطأ في إنشاء الحساب: ' + err.message); btn.disabled = false; btn.style.opacity = "1"; });
+            } else {
+                auth.signInWithEmailAndPassword(email, password)
+                    .catch(err => { alert('خطأ في الدخول: تأكد من البيانات المرسلة. ' + err.message); btn.disabled = false; btn.style.opacity = "1"; });
             }
         }
 
-        function checkAuth() {
-            const session = JSON.parse(localStorage.getItem('ledger_user_session'));
+        // مراقبة حالة الجلسة وتأمين الواجهات الحية والتزامن السحابي الفوري
+        auth.onAuthStateChanged(user => {
             const loginScreen = document.getElementById('loginScreen');
             const appContent = document.getElementById('appContent');
+            const btn = document.getElementById('mainAuthBtn');
             
-            if(session) {
+            btn.disabled = false; 
+            btn.style.opacity = "1";
+
+            if(user) {
+                currentUser = user;
+                document.getElementById('userName').innerText = user.email.split('@')[0];
                 loginScreen.classList.add('hidden');
                 appContent.classList.remove('opacity-0', 'pointer-events-none');
-                document.getElementById('userName').innerText = session.name;
-                document.getElementById('userAvatar').src = session.picture;
-                renderAll();
+                
+                // الاستماع والتزامن الحي المباشر مع قاعدة بيانات Firestore السحابية لكل مستخدم على حدة
+                db.collection('users').doc(user.uid).onSnapshot(doc => {
+                    if(doc.exists) {
+                        const data = doc.data();
+                        people = data.people || [];
+                        receipts = data.receipts || [];
+                    } else {
+                        people = [];
+                        receipts = [];
+                    }
+                    renderAll();
+                });
             } else {
+                currentUser = null;
                 loginScreen.classList.remove('hidden');
                 appContent.classList.add('opacity-0', 'pointer-events-none');
             }
-        }
+        });
 
         function logout() {
-            localStorage.removeItem('ledger_user_session');
-            location.reload();
+            auth.signOut().then(() => {
+                location.reload();
+            });
         }
 
-        function saveData() {
-            localStorage.setItem('ledger_people', JSON.stringify(people));
-            localStorage.setItem('ledger_receipts', JSON.stringify(receipts));
+        // حفظ وتحديث البيانات في سحابة Firestore مباشرة
+        function syncDataToCloud() {
+            if(currentUser) {
+                db.collection('users').doc(currentUser.uid).set({
+                    people: people,
+                    receipts: receipts
+                }, { merge: true }).catch(err => {
+                    console.error("خطأ أثناء مزامنة البيانات سحابياً: ", err);
+                });
+            }
         }
 
         function formatMoney(amount) {
@@ -348,21 +415,18 @@
                 people.push({ id: Date.now(), name, phone, address, role });
             }
 
-            saveData();
+            syncDataToCloud();
             closeModal('personModal');
-            renderAll();
         }
 
         function deletePerson(id) {
             if(confirm('هل أنت متأكد من حذف هذا الشخص؟ سيؤدي ذلك لحذف عملياته أيضاً.')) {
                 people = people.filter(p => p.id !== id);
                 receipts = receipts.filter(r => r.personId !== id);
-                saveData();
-                renderAll();
+                syncDataToCloud();
             }
         }
 
-        // تحكم البحث الذكي المتقدم
         function filterPersonDropdown() {
             const input = document.getElementById('personSearchInput');
             const filter = input.value.trim().toLowerCase();
@@ -453,16 +517,14 @@
                 receipts.push({ id: Date.now(), docNo: lastDocNo + 1, type, personId, amount, details, date });
             }
 
-            saveData();
+            syncDataToCloud();
             closeModal('receiptModal');
-            renderAll();
         }
 
         function deleteReceipt(id) {
             if(confirm('هل أنت متأكد من حذف هذا الوصل نهائياً؟')) {
                 receipts = receipts.filter(r => r.id !== id);
-                saveData();
-                renderAll();
+                syncDataToCloud();
             }
         }
 
@@ -628,11 +690,6 @@
                 `;
             }).join('');
         }
-
-        // فحص حالة الجلسة عند تحميل المستند تلقائياً
-        window.onload = function() {
-            checkAuth();
-        };
     </script>
 </body>
 </html>
