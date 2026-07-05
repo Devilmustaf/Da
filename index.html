@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دفتر القبض والصرف الاحترافي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow: hidden; }
+        
+        /* قالب التصدير الرسمي للصورة */
+        .invoice-print-template {
+            display: none;
+            width: 480px;
+            background: #ffffff;
+            padding: 30px;
+            border: 2px dashed #94a3b8;
+            border-radius: 1rem;
+            font-family: 'Cairo', sans-serif;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pb-24">
+
+    <div id="loginScreen" class="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center p-4">
+        <div class="bg-white/5 backdrop-blur-md p-8 rounded-3xl border border-white/10 w-full max-w-md text-center shadow-2xl">
+            <div class="bg-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl mx-auto mb-4 shadow-lg shadow-emerald-900/50">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <h2 class="text-white text-xl font-bold mb-2">دفتر القبض والصرف الذكي</h2>
+            <p class="text-gray-400 text-xs mb-8">بالدينار العراقي - يرجى إثبات هويتك للوصول إلى الدفتر المالي</p>
+            
+            <div class="flex justify-center" id="googleBtnContainer">
+                <div id="g_id_onload"
+                     data-client_id="477503911817-g12v4al7cc1hkssf1s4opr0h8saq3ra7.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleCredentialResponse"
+                     data-auto_select="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="filled_blue"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="appContent" class="opacity-0 transition-opacity duration-500 pointer-events-none">
+        <header class="bg-[#047857] text-white pt-6 pb-20 px-4 md:px-8 rounded-b-[2rem] shadow-lg relative">
+            <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3 bg-black/10 px-4 py-2 rounded-xl border border-white/10 w-full md:w-auto justify-between md:justify-start">
+                    <div class="flex items-center gap-2">
+                        <img id="userAvatar" src="" class="w-8 h-8 rounded-full border border-white/20" alt="صورة المستخدم">
+                        <div class="text-right">
+                            <p id="userName" class="text-xs font-bold leading-none"></p>
+                            <p class="text-[10px] text-emerald-200 mt-1">حساب نشط</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="text-xs bg-red-600/20 hover:bg-red-600 text-red-200 hover:text-white px-2 py-1 rounded-md transition border border-red-500/30">
+                        خروج <i class="fa-solid fa-right-from-bracket mr-1"></i>
+                    </button>
+                </div>
+                
+                <div class="text-center md:text-right flex items-center gap-3">
+                    <div>
+                        <h1 class="text-2xl font-bold">دفتر القبض والصرف</h1>
+                        <p class="text-xs text-emerald-200 mt-1">بالدينار العراقي - نظام ذكي متكامل</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-full text-xl flex items-center justify-center">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-full max-w-6xl px-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-[#059669] text-white p-4 rounded-2xl shadow-md flex justify-between items-center border border-emerald-500">
+                    <div class="bg-white/20 p-3 rounded-xl text-lg"><i class="fa-solid fa-arrow-down"></i></div>
+                    <div class="text-left">
+                        <p class="text-xs text-emerald-100 font-semibold">إجمالي القبض</p>
+                        <p id="totalReceipts" class="text-xl font-bold mt-1">٠ د.ع</p>
+                    </div>
+                </div>
+
+                <div class="bg-[#db2777] text-white p-4 rounded-2xl shadow-md flex justify-between items-center border border-pink-500">
+                    <div class="bg-white/20 p-3 rounded-xl text-lg"><i class="fa-solid fa-arrow-up"></i></div>
+                    <div class="text-left">
+                        <p class="text-xs text-pink-100 font-semibold">إجمالي الصرف</p>
+                        <p id="totalExpenses" class="text-xl font-bold mt-1">٠ د.ع</p>
+                    </div>
+                </div>
+
+                <div class="bg-[#ea580c] text-white p-4 rounded-2xl shadow-md flex justify-between items-center border border-orange-500">
+                    <div class="bg-white/20 p-3 rounded-xl text-lg"><i class="fa-solid fa-briefcase"></i></div>
+                    <div class="text-left">
+                        <p class="text-xs text-orange-100 font-semibold">الرصيد النهائي</p>
+                        <p id="finalBalance" class="text-xl font-bold mt-1">٠ د.ع</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-6xl w-full mx-auto px-4 mt-24 flex-1">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex flex-wrap gap-2 w-full md:w-auto justify-center md:justify-start">
+                    <button onclick="openReceiptModal()" class="bg-[#0284c7] hover:bg-[#0369a1] text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition shadow-sm">
+                        <i class="fa-solid fa-plus"></i> وصل جديد
+                    </button>
+                    <button onclick="openPersonModal('customer')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition">
+                        <i class="fa-solid fa-user-plus text-gray-400"></i> إضافة زبون
+                    </button>
+                    <button onclick="openPersonModal('supplier')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition">
+                        <i class="fa-solid fa-truck-ramp-box text-gray-400"></i> إضافة مجهز
+                    </button>
+                </div>
+
+                <div class="flex gap-2 w-full md:w-auto max-w-lg flex-1">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="searchInput" oninput="renderAll()" placeholder="ابحث باسم الشخص أو رقم الوصل أو البيان..." class="w-full pl-4 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white transition text-right">
+                    </div>
+                    <select id="filterType" onchange="renderAll()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                        <option value="all">كل الوصولات</option>
+                        <option value="قبض">وصل قبض</option>
+                        <option value="صرف">وصل صرف</option>
+                    </select>
+                </div>
+            </div>
+
+            <section class="mt-8">
+                <h2 class="text-gray-500 text-sm font-bold mb-3 flex items-center gap-2">
+                    الأشخاص <span id="peopleCount" class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">0</span>
+                </h2>
+                <div id="peopleContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="text-gray-500 text-sm font-bold mb-3 flex items-center gap-2">
+                    الوصولات <span id="receiptsCount" class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">0</span>
+                </h2>
+                <div id="receiptsContainer" class="space-y-3"></div>
+            </section>
+        </main>
+    </div>
+
+    <div id="printCaptureContainer" class="fixed top-[-9999px] left-[-9999px]"></div>
+
+    <div id="personModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-lg z-50 overflow-y-auto p-6 text-right">
+            <h3 id="personModalTitle" class="text-lg font-bold text-gray-800 mb-4">إضافة شخص</h3>
+            <input type="hidden" id="personId">
+            <input type="hidden" id="personRole">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">الاسم</label>
+                    <input type="text" id="personName" class="w-full p-2 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">رقم الهاتف</label>
+                    <input type="text" id="personPhone" class="w-full p-2 border rounded-xl bg-gray-50 text-sm text-left focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">العنوان / المنطقة</label>
+                    <input type="text" id="personAddress" class="w-full p-2 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                </div>
+            </div>
+            <div class="mt-6 flex gap-2 justify-start">
+                <button onclick="savePerson()" class="bg-[#047857] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-800 transition">حفظ</button>
+                <button onclick="closeModal('personModal')" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-200 transition">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="receiptModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-lg z-50 overflow-y-auto p-6 text-right">
+            <h3 id="receiptModalTitle" class="text-lg font-bold text-gray-800 mb-4">إضافة وصل جديد</h3>
+            <input type="hidden" id="receiptId">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">نوع الوصل</label>
+                    <select id="receiptType" class="w-full p-2 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                        <option value="قبض">وصل قبض (+)</option>
+                        <option value="صرف">وصل صرف (-)</option>
+                    </select>
+                </div>
+                
+                <div class="relative">
+                    <label class="block text-sm text-gray-600 mb-1">ابحث عن الشخص واجلب اسمه</label>
+                    <div class="relative">
+                        <input type="text" id="personSearchInput" oninput="filterPersonDropdown()" placeholder="اكتب حرفاً من الاسم للبحث الفوري..." autocomplete="off" class="w-full p-2 pr-8 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 pointer-events-none">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </span>
+                    </div>
+                    <input type="hidden" id="receiptPersonId">
+                    <div id="personDropdownMenu" class="absolute hidden z-50 w-full bg-white border border-gray-200 rounded-xl mt-1 max-h-48 overflow-y-auto shadow-xl"></div>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">المبلغ (د.ع)</label>
+                    <input type="number" id="receiptAmount" class="w-full p-2 border rounded-xl bg-gray-50 text-sm text-left font-bold focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">البيان / التفاصيل</label>
+                    <input type="text" id="receiptDetails" class="w-full p-2 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">التاريخ</label>
+                    <input type="date" id="receiptDate" class="w-full p-2 border rounded-xl bg-gray-50 text-sm text-left focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                </div>
+            </div>
+            <div class="mt-6 flex gap-2 justify-start">
+                <button onclick="saveReceipt()" class="bg-[#0284c7] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#0369a1] transition">حفظ الوصل</button>
+                <button onclick="closeModal('receiptModal')" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-200 transition">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let people = JSON.parse(localStorage.getItem('ledger_people')) || [];
+        let receipts = JSON.parse(localStorage.getItem('ledger_receipts')) || [];
+
+        // إدارة التحقق من صحة تسجيل دخول جوجل وفك التشفير الأساسي للجلسة البسيطة
+        function parseJwt(token) {
+            try {
+                var base64Url = token.split('.')[1];
+                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch(e) {
+                return null;
+            }
+        }
+
+        function handleCredentialResponse(response) {
+            const responsePayload = parseJwt(response.credential);
+            if(responsePayload) {
+                localStorage.setItem('ledger_user_session', JSON.stringify({
+                    name: responsePayload.name,
+                    picture: responsePayload.picture
+                }));
+                checkAuth();
+            }
+        }
+
+        function checkAuth() {
+            const session = JSON.parse(localStorage.getItem('ledger_user_session'));
+            const loginScreen = document.getElementById('loginScreen');
+            const appContent = document.getElementById('appContent');
+            
+            if(session) {
+                loginScreen.classList.add('hidden');
+                appContent.classList.remove('opacity-0', 'pointer-events-none');
+                document.getElementById('userName').innerText = session.name;
+                document.getElementById('userAvatar').src = session.picture;
+                renderAll();
+            } else {
+                loginScreen.classList.remove('hidden');
+                appContent.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('ledger_user_session');
+            location.reload();
+        }
+
+        function saveData() {
+            localStorage.setItem('ledger_people', JSON.stringify(people));
+            localStorage.setItem('ledger_receipts', JSON.stringify(receipts));
+        }
+
+        function formatMoney(amount) {
+            return Number(amount).toLocaleString('ar-IQ') + " د.ع";
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('pointer-events-none');
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            document.body.classList.remove('modal-active');
+            if(modalId === 'receiptModal') {
+                document.getElementById('personDropdownMenu').classList.add('hidden');
+            }
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('pointer-events-none');
+            modal.classList.remove('opacity-0');
+            modal.classList.add('opacity-100');
+            document.body.classList.add('modal-active');
+        }
+
+        function openPersonModal(role, id = null) {
+            document.getElementById('personRole').value = role;
+            if(id) {
+                const person = people.find(p => p.id === id);
+                document.getElementById('personId').value = person.id;
+                document.getElementById('personName').value = person.name;
+                document.getElementById('personPhone').value = person.phone;
+                document.getElementById('personAddress').value = person.address;
+                document.getElementById('personModalTitle').innerText = role === 'customer' ? 'تعديل بيانات الزبون' : 'تعديل بيانات المجهز';
+            } else {
+                document.getElementById('personId').value = '';
+                document.getElementById('personName').value = '';
+                document.getElementById('personPhone').value = '';
+                document.getElementById('personAddress').value = '';
+                document.getElementById('personModalTitle').innerText = role === 'customer' ? 'إضافة زبون جديد' : 'إضافة مجهز جديد';
+            }
+            openModal('personModal');
+        }
+
+        function savePerson() {
+            const id = document.getElementById('personId').value;
+            const name = document.getElementById('personName').value.trim();
+            const phone = document.getElementById('personPhone').value.trim();
+            const address = document.getElementById('personAddress').value.trim();
+            const role = document.getElementById('personRole').value;
+
+            if(!name) return alert('الرجاء كتابة الإسم أولاً');
+
+            if(id) {
+                const index = people.findIndex(p => p.id == id);
+                people[index] = { ...people[index], name, phone, address };
+            } else {
+                people.push({ id: Date.now(), name, phone, address, role });
+            }
+
+            saveData();
+            closeModal('personModal');
+            renderAll();
+        }
+
+        function deletePerson(id) {
+            if(confirm('هل أنت متأكد من حذف هذا الشخص؟ سيؤدي ذلك لحذف عملياته أيضاً.')) {
+                people = people.filter(p => p.id !== id);
+                receipts = receipts.filter(r => r.personId !== id);
+                saveData();
+                renderAll();
+            }
+        }
+
+        // تحكم البحث الذكي المتقدم
+        function filterPersonDropdown() {
+            const input = document.getElementById('personSearchInput');
+            const filter = input.value.trim().toLowerCase();
+            const dropdown = document.getElementById('personDropdownMenu');
+            
+            if (people.length === 0) {
+                dropdown.innerHTML = `<div class="p-3 text-sm text-gray-400 text-center">لا يوجد أشخاص مسجلين</div>`;
+                dropdown.classList.remove('hidden');
+                return;
+            }
+
+            const matches = people.filter(p => p.name.toLowerCase().includes(filter));
+
+            if(matches.length === 0) {
+                dropdown.innerHTML = `<div class="p-3 text-sm text-gray-400 text-center">لم يتم العثور على نتائج للبحث</div>`;
+            } else {
+                dropdown.innerHTML = matches.map(p => `
+                    <div onclick="selectPersonForReceipt(${p.id}, '${p.name}')" class="p-2.5 hover:bg-gray-50 text-sm text-gray-700 cursor-pointer border-b border-gray-100 last:border-none flex justify-between items-center transition">
+                        <span class="font-semibold">${p.name}</span>
+                        <span class="text-xs ${p.role === 'customer' ? 'bg-cyan-50 text-cyan-600' : 'bg-purple-50 text-purple-600'} px-1.5 py-0.5 rounded">${p.role === 'customer' ? 'زبون' : 'مجهز'}</span>
+                    </div>
+                `).join('');
+            }
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectPersonForReceipt(id, name) {
+            document.getElementById('receiptPersonId').value = id;
+            document.getElementById('personSearchInput').value = name;
+            document.getElementById('personDropdownMenu').classList.add('hidden');
+        }
+
+        document.addEventListener('click', function(e) {
+            const container = document.getElementById('personSearchInput');
+            const dropdown = document.getElementById('personDropdownMenu');
+            if (container && !container.contains(e.target) && dropdown && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        function openReceiptModal(id = null) {
+            if(people.length === 0) {
+                alert('الرجاء إضافة زبون أو مجهز واحد على الأقل قبل عمل وصل!');
+                return;
+            }
+
+            if(id) {
+                const receipt = receipts.find(r => r.id === id);
+                const person = people.find(p => p.id === receipt.personId);
+                
+                document.getElementById('receiptId').value = receipt.id;
+                document.getElementById('receiptType').value = receipt.type;
+                document.getElementById('receiptPersonId').value = receipt.personId;
+                document.getElementById('personSearchInput').value = person ? person.name : 'شخص محذوف';
+                document.getElementById('receiptAmount').value = receipt.amount;
+                document.getElementById('receiptDetails').value = receipt.details;
+                document.getElementById('receiptDate').value = receipt.date;
+                document.getElementById('receiptModalTitle').innerText = 'تعديل بيانات الوصل';
+            } else {
+                document.getElementById('receiptId').value = '';
+                document.getElementById('receiptType').value = 'قبض';
+                document.getElementById('receiptPersonId').value = '';
+                document.getElementById('personSearchInput').value = '';
+                document.getElementById('receiptAmount').value = '';
+                document.getElementById('receiptDetails').value = '';
+                document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('receiptModalTitle').innerText = 'إضافة وصل جديد';
+            }
+            openModal('receiptModal');
+        }
+
+        function saveReceipt() {
+            const id = document.getElementById('receiptId').value;
+            const type = document.getElementById('receiptType').value;
+            const personId = Number(document.getElementById('receiptPersonId').value);
+            const amount = Number(document.getElementById('receiptAmount').value);
+            const details = document.getElementById('receiptDetails').value.trim() || 'دفعة';
+            const date = document.getElementById('receiptDate').value;
+
+            if(!personId) return alert('الرجاء تحديد واختيار شخص من القائمة الذكية المنسدلة أولاً');
+            if(!amount || amount <= 0) return alert('الرجاء إدخال مبلغ صحيح أكبر من صفر');
+
+            if(id) {
+                const index = receipts.findIndex(r => r.id == id);
+                receipts[index] = { ...receipts[index], type, personId, amount, details, date };
+            } else {
+                const lastDocNo = receipts.length > 0 ? Math.max(...receipts.map(r => r.docNo || 1000)) : 1000;
+                receipts.push({ id: Date.now(), docNo: lastDocNo + 1, type, personId, amount, details, date });
+            }
+
+            saveData();
+            closeModal('receiptModal');
+            renderAll();
+        }
+
+        function deleteReceipt(id) {
+            if(confirm('هل أنت متأكد من حذف هذا الوصل نهائياً؟')) {
+                receipts = receipts.filter(r => r.id !== id);
+                saveData();
+                renderAll();
+            }
+        }
+
+        function exportInvoiceImage(id) {
+            const receipt = receipts.find(r => r.id === id);
+            const person = people.find(p => p.id === receipt.personId);
+            const name = person ? person.name : 'شخص محذوف';
+            const isKabid = receipt.type === 'قبض';
+            const docNo = receipt.docNo || 1000;
+            
+            const formattedDate = receipt.date.replace(/-/g, '/');
+            const currentTime = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+            const templateHtml = `
+                <div class="invoice-print-template" style="display: block;">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h2 style="font-size: 1.35rem; font-weight: 700; color: #1e293b; margin: 0;">نظام القبض والصرف السحابي</h2>
+                        <p style="font-size: 0.75rem; color: #64748b; margin-top: 4px; font-weight: 600;">الجهة القابضة: دفتر الحسابات العام</p>
+                    </div>
+                    <div style="border-top: 1px dashed #cbd5e1; margin-bottom: 25px;"></div>
+                    <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 25px; padding: 0 5px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">رقم الوصل:</span>
+                            <span style="font-size: 0.95rem; font-weight: 700; color: #2563eb; font-family: monospace;">#${docNo}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">طبيعة السند:</span>
+                            <span style="font-size: 0.9rem; font-600; color: #334155;">${isKabid ? 'قبض مالي (+)' : 'صرف مالي (-)'}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">الجهة/الاسم:</span>
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">${name}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">البيان:</span>
+                            <span style="font-size: 0.9rem; color: #334155; font-weight: 600;">${receipt.details}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">التاريخ:</span>
+                            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">${formattedDate} – ${currentTime}</span>
+                        </div>
+                    </div>
+                    <div style="border-top: 1px dashed #cbd5e1; margin-bottom: 20px;"></div>
+                    <div style="background-color: #f8fafc; border: 1px solid #f1f5f9; border-radius: 0.75rem; padding: 16px; text-align: center;">
+                        <p style="font-size: 0.75rem; font-weight: 700; color: #64748b; margin: 0 0 6px 0;">المبلغ الإجمالي</p>
+                        <p style="font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0; font-family: sans-serif;">${formatMoney(receipt.amount)}</p>
+                    </div>
+                </div>
+            `;
+
+            const container = document.getElementById('printCaptureContainer');
+            container.innerHTML = templateHtml;
+            const elementToCapture = container.querySelector('.invoice-print-template');
+
+            html2canvas(elementToCapture, {
+                backgroundColor: '#ffffff',
+                scale: 3,
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `وصل_رقم_${docNo}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 1.0);
+                link.click();
+                container.innerHTML = '';
+            });
+        }
+
+        function renderAll() {
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const filterType = document.getElementById('filterType').value;
+
+            let totalRec = 0;
+            let totalExp = 0;
+            
+            receipts.forEach(r => {
+                if(r.type === 'قبض') totalRec += r.amount;
+                else totalExp += r.amount;
+            });
+
+            document.getElementById('totalReceipts').innerText = formatMoney(totalRec);
+            document.getElementById('totalExpenses').innerText = formatMoney(totalExp);
+            document.getElementById('finalBalance').innerText = formatMoney(totalRec - totalExp);
+
+            const filteredPeople = people.filter(p => p.name.toLowerCase().includes(searchVal));
+            document.getElementById('peopleCount').innerText = filteredPeople.length;
+            
+            const peopleContainer = document.getElementById('peopleContainer');
+            peopleContainer.innerHTML = filteredPeople.map(p => {
+                let pBalance = 0;
+                receipts.forEach(r => {
+                    if(r.personId === p.id) {
+                        if(r.type === 'قبض') pBalance += r.amount;
+                        else pBalance -= r.amount;
+                    }
+                });
+
+                let balanceText = "";
+                if(pBalance > 0) balanceText = `له ${formatMoney(Math.abs(pBalance))}`;
+                else if(pBalance < 0) balanceText = `عليه ${formatMoney(Math.abs(pBalance))}`;
+                else balanceText = "متوازن 0 د.ع";
+
+                return `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-start">
+                        <div class="flex gap-1">
+                            <button onclick="deletePerson(${p.id})" class="w-8 h-8 text-red-500 hover:bg-red-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-trash-can text-sm"></i></button>
+                            <button onclick="openPersonModal('${p.role}', ${p.id})" class="w-8 h-8 text-gray-500 hover:bg-gray-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-pen-to-square text-sm"></i></button>
+                        </div>
+                        <div class="text-right">
+                            <div class="flex items-center gap-2 justify-end mb-1">
+                                <span class="${p.role === 'customer' ? 'bg-cyan-50 text-cyan-600' : 'bg-purple-50 text-purple-600'} text-xs font-semibold px-2 py-0.5 rounded-md">${p.role === 'customer' ? 'زبون' : 'مجهز'}</span>
+                                <h3 class="font-bold text-gray-800 text-base">${p.name}</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 flex items-center gap-1 justify-end" style="direction: ltr;">${p.phone || 'بلا هاتف'} <i class="fa-solid fa-phone text-[10px]"></i></p>
+                            <p class="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-end">${p.address || 'بلا عنوان'} <i class="fa-solid fa-location-dot text-[10px]"></i></p>
+                            <p class="text-xs font-bold ${pBalance >= 0 ? 'text-emerald-600' : 'text-red-600'} mt-3">الرصيد: ${balanceText}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const filteredReceipts = receipts.filter(r => {
+                const person = people.find(p => p.id === r.personId);
+                const pName = person ? person.name.toLowerCase() : '';
+                const matchesSearch = pName.includes(searchVal) || String(r.docNo).includes(searchVal) || r.details.toLowerCase().includes(searchVal);
+                const matchesType = filterType === 'all' || r.type === filterType;
+                return matchesSearch && matchesType;
+            }).reverse();
+
+            document.getElementById('receiptsCount').innerText = filteredReceipts.length;
+            const receiptsContainer = document.getElementById('receiptsContainer');
+            
+            receiptsContainer.innerHTML = filteredReceipts.map(r => {
+                const person = people.find(p => p.id === r.personId);
+                const name = person ? person.name : 'شخص محذوف';
+                const isKabid = r.type === 'قبض';
+                const currentDocNo = r.docNo || 1000;
+
+                return `
+                    <div id="receipt-card-${r.id}" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 transition hover:bg-gray-50/50">
+                        <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+                            <span class="text-xl font-bold ${isKabid ? 'text-emerald-600' : 'text-pink-600'} font-sans">${isKabid ? '+' : '-'} ${formatMoney(r.amount)}</span>
+                            <div class="action-buttons flex gap-1">
+                                <button onclick="deleteReceipt(${r.id})" class="w-8 h-8 text-red-500 hover:bg-red-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                                <button onclick="openReceiptModal(${r.id})" class="w-8 h-8 text-gray-500 hover:bg-gray-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-pen-to-square text-xs"></i></button>
+                                <button onclick="exportInvoiceImage(${r.id})" class="w-8 h-8 text-[#0284c7] hover:bg-sky-50 rounded-lg flex items-center justify-center transition border border-gray-100" title="تحميل كصورة JPG"><i class="fa-solid fa-download text-xs"></i></button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                            <div class="text-right">
+                                <div class="flex items-center gap-2 justify-end">
+                                    <span class="text-xs text-gray-400 font-mono">#${currentDocNo}</span>
+                                    <span class="text-xs ${isKabid ? 'bg-emerald-50 text-emerald-600' : 'bg-pink-50 text-pink-600'} px-2 py-0.5 rounded font-semibold">وصل ${r.type}</span>
+                                    <h4 class="font-bold text-gray-800 text-base">${name}</h4>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-1">${r.date.replace(/-/g, '/')} – البيان: ${r.details}</p>
+                            </div>
+                            <div class="w-11 h-11 ${isKabid ? 'bg-emerald-50 text-emerald-600' : 'bg-pink-50 text-pink-600'} rounded-full flex items-center justify-center text-xl">
+                                <i class="fa-solid ${isKabid ? 'fa-circle-arrow-down' : 'fa-circle-arrow-up'}"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // فحص حالة الجلسة عند تحميل المستند تلقائياً
+        window.onload = function() {
+            checkAuth();
+        };
+    </script>
+</body>
+</html>
