@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>دفتر القبض والصرف الاحترافي</title>
     
+    <!-- تهيئة خصائص العرض للتطبيق المستقل -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="#047857">
     <meta name="apple-mobile-web-app-title" content="دفتر الحسابات">
     <meta name="theme-color" content="#047857">
 
+    <!-- ربط ملف الـ Manifest الخارجي الرسمي -->
     <link rel="manifest" href="manifest.json">
 
+    <!-- المكتبات الخارجية -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -19,6 +22,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
     
+    <!-- مكتبات Firebase CDN (الإصدار المتوافق v9 Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -42,6 +46,7 @@
 </head>
 <body class="min-h-screen flex flex-col pb-24">
 
+    <!-- شاشة تسجيل الدخول والإنشاء -->
     <div id="authContainer" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50 p-4">
         <div class="bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 text-right border border-slate-700">
             <div class="flex justify-center mb-4">
@@ -52,6 +57,7 @@
             <h2 class="text-xl font-bold text-white text-center mb-1">دفتر القبض والصرف الذكي</h2>
             <p class="text-xs text-slate-400 text-center mb-6">بالدينار العراقي - نظام الحسابات السحابي الآمن</p>
 
+            <!-- واجهة البريد الإلكتروني وكلمة المرور -->
             <div id="emailAuthView" class="space-y-4">
                 <div>
                     <label class="block text-sm text-slate-300 mb-1">البريد الإلكتروني</label>
@@ -76,6 +82,7 @@
                     <div class="flex-grow border-t border-slate-700"></div>
                 </div>
 
+                <!-- زر جوجل لتسجيل الدخول السريع -->
                 <button onclick="handleGoogleAuth()" class="w-full bg-[#2563eb] hover:bg-blue-700 text-white p-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg">
                     <i class="fa-brands fa-google text-base"></i> تسجيل الدخول باستخدام Google
                 </button>
@@ -83,6 +90,7 @@
         </div>
     </div>
 
+    <!-- محتوى التطبيق الرئيسي -->
     <div id="appContent" class="transition-opacity duration-500 opacity-0 pointer-events-none">
         <header class="bg-[#047857] text-white pt-6 pb-20 px-4 md:px-8 rounded-b-[2rem] shadow-lg relative">
             <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
@@ -188,10 +196,26 @@
                 <div id="receiptsContainer" class="space-y-3"></div>
             </section>
         </main>
+
+        <!-- الشريط السفلي الثابت (Navigation Bar) -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-xl z-40 flex justify-around items-center py-2 px-4">
+            <button onclick="scrollToSection('receiptsContainer')" class="flex flex-col items-center gap-1 text-gray-500 hover:text-[#047857] transition focus:outline-none">
+                <i class="fa-solid fa-receipt text-lg"></i>
+                <span class="text-[10px] font-bold">الوصولات</span>
+            </button>
+            <button onclick="openReceiptModal()" class="flex flex-col items-center justify-center w-12 h-12 bg-[#047857] hover:bg-emerald-700 text-white rounded-full transition shadow-md transform -translate-y-3 border-4 border-white focus:outline-none">
+                <i class="fa-solid fa-plus text-lg"></i>
+            </button>
+            <button onclick="scrollToSection('peopleContainer')" class="flex flex-col items-center gap-1 text-gray-500 hover:text-[#047857] transition focus:outline-none">
+                <i class="fa-solid fa-users text-lg"></i>
+                <span class="text-[10px] font-bold">الأشخاص</span>
+            </button>
+        </nav>
     </div>
 
     <div id="printCaptureContainer" class="fixed top-[-9999px] left-[-9999px]"></div>
 
+    <!-- النافذة المنبثقة لإضافة شخص -->
     <div id="personModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
         <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-lg z-50 overflow-y-auto p-6 text-right">
@@ -219,6 +243,7 @@
         </div>
     </div>
 
+    <!-- النافذة المنبثقة لإضافة وصل -->
     <div id="receiptModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
         <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-lg z-50 overflow-y-auto p-6 text-right">
@@ -326,6 +351,14 @@
                 });
                 renderAll();
             }, err => console.error("خطأ مزامنة الوصولات:", err));
+        }
+
+        // دالة التنقل السلس عبر عناصر الشريط السفلي
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            if(element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
 
         // معالجة تسجيل الدخول وإنشاء الحسابات بالبريد الإلكتروني
@@ -673,7 +706,7 @@
                         <div class="text-right">
                             <div class="flex items-center gap-2 justify-end mb-1">
                                 <span class="${p.role === 'customer' ? 'bg-cyan-50 text-cyan-600' : 'bg-purple-50 text-purple-600'} text-xs font-semibold px-2 py-0.5 rounded-md">${p.role === 'customer' ? 'زبون' : 'مجهز'}</span>
-                                <h3 class="font-bold text-gray-800 text-base">${p.name}</h3>
+                                class="font-bold text-gray-800 text-base">${p.name}</h3>
                             </div>
                             <p class="text-xs text-gray-500 flex items-center gap-1 justify-end" style="direction: ltr;">${p.phone || 'بلا هاتف'} <i class="fa-solid fa-phone text-[10px]"></i></p>
                             <p class="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-end">${p.address || 'بلا عنوان'} <i class="fa-solid fa-location-dot text-[10px]"></i></p>
