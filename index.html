@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دفتر القبض والصرف الاحترافي</title>
+    <title>دفتر القبض والصرف الاحترافي - سحابي</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="#047857">
@@ -45,11 +45,11 @@
                 <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-start">
                     <div class="flex items-center gap-2 bg-black/10 px-4 py-2 rounded-xl border border-white/10">
                         <div class="w-8 h-8 rounded-full border border-white/20 bg-emerald-800 flex items-center justify-center text-white text-xs">
-                            <i class="fa-solid fa-database"></i>
+                            <i class="fa-solid fa-cloud"></i>
                         </div>
                         <div class="text-right">
-                            <p class="text-xs font-bold leading-none">نظام الحفظ المحلي</p>
-                            <p class="text-[10px] text-emerald-200 mt-1">تخزين آمن ومباشر</p>
+                            <p class="text-xs font-bold leading-none">نظام الحفظ السحابي</p>
+                            <p class="text-[10px] text-emerald-200 mt-1">جوجل Firebase Firestore</p>
                         </div>
                     </div>
 
@@ -253,12 +253,146 @@
         </div>
     </div>
 
-    <script>
-        let people = [];
-        let receipts = [];
-        let deferredPrompt;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // دالة التبديل الذكية بين الصفحات الثلاث
+        // ⚠️ يرجى استبدال كود الـ Config هذا ببيانات مشروعك الخاصة من لوحة تحكم Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // تهيئة Firebase و Firestore
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // ربط الدوال السحابية بالنطاق العالمي لتعمل مع الـ onClick في الـ HTML الأصلي
+        window.savePerson = savePerson;
+        window.deletePerson = deletePerson;
+        window.saveReceipt = saveReceipt;
+        window.deleteReceipt = deleteReceipt;
+
+        // مصفوفات تخزين البيانات الحية المحلية داخل المتصفح لتسريع الفلترة والـ rendering
+        window.people = [];
+        window.receipts = [];
+
+        // الاستماع اللحظي التلقائي (Realtime) لقاعدة بيانات الأشخاص
+        onSnapshot(collection(db, "people"), (snapshot) => {
+            window.people = [];
+            snapshot.forEach((doc) => {
+                window.people.push({ id: Number(doc.id), ...doc.data() });
+            });
+            window.renderAll();
+        });
+
+        // الاستماع اللحظي التلقائي (Realtime) لقاعدة بيانات الوصولات مرتبة حسب تاريخ السند
+        onSnapshot(collection(db, "receipts"), (snapshot) => {
+            window.receipts = [];
+            snapshot.forEach((doc) => {
+                window.receipts.push({ id: Number(doc.id), ...doc.data() });
+            });
+            window.renderAll();
+        });
+
+        // دالة حفظ/تعديل شخص على Firestore سحابياً
+        async function savePerson() {
+            const id = document.getElementById('personId').value;
+            const name = document.getElementById('personName').value.trim();
+            const phone = document.getElementById('personPhone').value.trim();
+            const address = document.getElementById('personAddress').value.trim();
+            const role = document.getElementById('personRole').value;
+
+            if(!name) return alert('الرجاء كتابة الإسم أولاً');
+
+            const targetId = id ? id : String(Date.now());
+            
+            try {
+                await setDoc(doc(db, "people", targetId), {
+                    name, phone, address, role
+                }, { merge: true });
+
+                closeModal('personModal');
+                switchTab('people');
+            } catch (error) {
+                console.error("خطأ أثناء الحفظ السحابي الشخصي: ", error);
+                alert("حدث خطأ أثناء الاتصال بالسحابة الإلكترونية.");
+            }
+        }
+
+        // دالة حذف شخص وعملياته من السحابة الإلكترونية
+        async function deletePerson(id) {
+            if(confirm('هل أنت متأكد من حذف هذا الشخص؟ سيؤدي ذلك لحذف عملياته سحابياً أيضاً.')) {
+                try {
+                    await deleteDoc(doc(db, "people", String(id)));
+                    
+                    // تنظيف وإلغاء فوري لجميع وصولات الشخص المحذوف سحابياً
+                    const batchPromises = window.receipts
+                        .filter(r => r.personId === id)
+                        .map(r => deleteDoc(doc(db, "receipts", String(r.id))));
+                    
+                    await Promise.all(batchPromises);
+                } catch (error) {
+                    console.error("خطأ بالحذف السحابي: ", error);
+                }
+            }
+        }
+
+        // دالة حفظ/تعديل السندات والوصولات على Firestore سحابياً
+        async function saveReceipt() {
+            const id = document.getElementById('receiptId').value;
+            const type = document.getElementById('receiptType').value;
+            const personId = Number(document.getElementById('receiptPersonId').value);
+            const amount = Number(document.getElementById('receiptAmount').value);
+            const details = document.getElementById('receiptDetails').value.trim() || 'دفعة';
+            const date = document.getElementById('receiptDate').value;
+
+            if(!personId) return alert('الرجاء تحديد واختيار شخص من القائمة الذكية المنسدلة أولاً');
+            if(!amount || amount <= 0) return alert('الرجاء إدخال مبلغ صحيح أكبر من صفر');
+
+            try {
+                if(id) {
+                    // عملية تعديل لوصل موجود مسبقاً
+                    await setDoc(doc(db, "receipts", String(id)), {
+                        type, personId, amount, details, date
+                    }, { merge: true });
+                } else {
+                    // إنشاء رقم مستندي فريد تسلسلي جديد ذكي
+                    const lastDocNo = window.receipts.length > 0 ? Math.max(...window.receipts.map(r => r.docNo || 1000)) : 1000;
+                    const newId = String(Date.now());
+                    
+                    await setDoc(doc(db, "receipts", newId), {
+                        docNo: lastDocNo + 1, type, personId, amount, details, date
+                    });
+                }
+
+                closeModal('receiptModal');
+                switchTab('receipts');
+            } catch (error) {
+                console.error("خطأ بحفظ السند سحابياً: ", error);
+            }
+        }
+
+        // دالة حذف وصل مالي نهائياً من Firestore
+        async function deleteReceipt(id) {
+            if(confirm('هل أنت متأكد من حذف هذا الوصل نهائياً من السحابة؟')) {
+                try {
+                    await deleteDoc(doc(db, "receipts", String(id)));
+                } catch (error) {
+                    console.error("خطأ أثناء حذف السند: ", error);
+                }
+            }
+        }
+    </script>
+
+    <script>
+        // دالة التبديل الذكية المخصصة لشريط التنقل السفلي (3 تبويبات كاملة)
         function switchTab(tab) {
             const pageHome = document.getElementById('pageHome');
             const pagePeople = document.getElementById('pagePeople');
@@ -268,12 +402,10 @@
             const btnPeople = document.getElementById('tabPeopleBtn');
             const btnReceipts = document.getElementById('tabReceiptsBtn');
 
-            // إخفاء كل الصفحات أولاً
             pageHome.classList.add('hidden');
             pagePeople.classList.add('hidden');
             pageReceipts.classList.add('hidden');
 
-            // تصفير تنسيق الأزرار
             btnHome.className = "flex flex-col items-center gap-1 text-gray-400 font-medium text-xs transition-all duration-200 flex-1 py-1";
             btnPeople.className = "flex flex-col items-center gap-1 text-gray-400 font-medium text-xs transition-all duration-200 flex-1 py-1";
             btnReceipts.className = "flex flex-col items-center gap-1 text-gray-400 font-medium text-xs transition-all duration-200 flex-1 py-1";
@@ -290,7 +422,8 @@
             }
         }
 
-        // تسجيل ملف الـ Service Worker الخارجي بشكل رسمي
+        // إعدادات الـ PWA والتثبيت الذكي
+        let deferredPrompt;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
@@ -299,17 +432,13 @@
             });
         }
 
-        // التقاط حدث التثبيت الفوري الرسمي من المتصفح
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             const installBtn = document.getElementById('installBtn');
-            if (installBtn) {
-                installBtn.classList.remove('hidden'); 
-            }
+            if (installBtn) installBtn.classList.remove('hidden'); 
         });
 
-        // التحقق في حال كان التطبيق مثبتاً بالفعل
         window.addEventListener('DOMContentLoaded', () => {
             if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
                 document.getElementById('installBtn').classList.add('hidden');
@@ -318,41 +447,18 @@
 
         function triggerPwaInstall() {
             if (!deferredPrompt) {
-                alert('لتثبيت التطبيق على جهازك:\n- على الأندرويد/جوجل كروم: اضغط على النقاط الثلاث بالأعلى ثم اختر "إضافة إلى الشاشة الرئيسية".\n- على الآيفون: اضغط على زر المشاركة بقاع متصفح Safari ثم اختر "إضافة إلى الشاشة الرئيسية".');
+                alert('لتثبيت التطبيق على جهازك:\n- على الأندرويد: اضغط على النقاط الثلاث بالأعلى ثم اختر "إضافة إلى الشاشة الرئيسية".\n- على الآيفون: اضغط على زر المشاركة ثم اختر "إضافة إلى الشاشة الرئيسية".');
                 return;
             }
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('وافق المستخدم على التثبيت');
-                }
+                if (choiceResult.outcome === 'accepted') console.log('وافق المستخدم على التثبيت');
                 deferredPrompt = null;
                 document.getElementById('installBtn').classList.add('hidden');
             });
         }
 
-        window.addEventListener('appinstalled', () => {
-            document.getElementById('installBtn').classList.add('hidden');
-            alert('تم تثبيت دفتر القبض والصرف بنجاح على جهازك!');
-        });
-
-        function loadLocalData() {
-            const storedPeople = localStorage.getItem('local_ledger_people');
-            const storedReceipts = localStorage.getItem('local_ledger_receipts');
-            
-            people = storedPeople ? JSON.parse(storedPeople) : [];
-            receipts = storedReceipts ? JSON.parse(storedReceipts) : [];
-            
-            renderAll();
-        }
-
-        function saveToLocalStorage() {
-            localStorage.setItem('local_ledger_people', JSON.stringify(people));
-            localStorage.setItem('local_ledger_receipts', JSON.stringify(receipts));
-            renderAll();
-        }
-
-        // تنسيق المبالغ لتظهر بالأرقام الإنكليزية المعتادة
+        // تنسيق المبالغ المالية لتظهر باللغة الإنكليزية القياسية والواضحة
         function formatMoney(amount) {
             return Number(amount).toLocaleString('en-US') + " د.ع";
         }
@@ -379,7 +485,7 @@
         function openPersonModal(role, id = null) {
             document.getElementById('personRole').value = role;
             if(id) {
-                const person = people.find(p => p.id === id);
+                const person = window.people.find(p => p.id === id);
                 document.getElementById('personId').value = person.id;
                 document.getElementById('personName').value = person.name;
                 document.getElementById('personPhone').value = person.phone;
@@ -395,49 +501,18 @@
             openModal('personModal');
         }
 
-        function savePerson() {
-            const id = document.getElementById('personId').value;
-            const name = document.getElementById('personName').value.trim();
-            const phone = document.getElementById('personPhone').value.trim();
-            const address = document.getElementById('personAddress').value.trim();
-            const role = document.getElementById('personRole').value;
-
-            if(!name) return alert('الرجاء كتابة الإسم أولاً');
-
-            if(id) {
-                const index = people.findIndex(p => p.id == id);
-                people[index] = { ...people[index], name, phone, address };
-            } else {
-                people.push({ id: Date.now(), name, phone, address, role });
-            }
-
-            saveToLocalStorage();
-            closeModal('personModal');
-            
-            // تحويل المستخدم تلقائياً لتبويب الحسابات لمشاهدة الشخص المضاف
-            switchTab('people');
-        }
-
-        function deletePerson(id) {
-            if(confirm('هل أنت متأكد من حذف هذا الشخص؟ سيؤدي ذلك لحذف عملياته أيضاً.')) {
-                people = people.filter(p => p.id !== id);
-                receipts = receipts.filter(r => r.personId !== id);
-                saveToLocalStorage();
-            }
-        }
-
         function filterPersonDropdown() {
             const input = document.getElementById('personSearchInput');
             const filter = input.value.trim().toLowerCase();
             const dropdown = document.getElementById('personDropdownMenu');
             
-            if (people.length === 0) {
+            if (!window.people || window.people.length === 0) {
                 dropdown.innerHTML = `<div class="p-3 text-sm text-gray-400 text-center">لا يوجد أشخاص مسجلين</div>`;
                 dropdown.classList.remove('hidden');
                 return;
             }
 
-            const matches = people.filter(p => p.name.toLowerCase().includes(filter));
+            const matches = window.people.filter(p => p.name.toLowerCase().includes(filter));
 
             if(matches.length === 0) {
                 dropdown.innerHTML = `<div class="p-3 text-sm text-gray-400 text-center">لم يتم العثور على نتائج للبحث</div>`;
@@ -467,14 +542,14 @@
         });
 
         function openReceiptModal(id = null) {
-            if(people.length === 0) {
+            if(!window.people || window.people.length === 0) {
                 alert('الرجاء إضافة زبون أو مجهز واحد على الأقل قبل عمل وصل!');
                 return;
             }
 
             if(id) {
-                const receipt = receipts.find(r => r.id === id);
-                const person = people.find(p => p.id === receipt.personId);
+                const receipt = window.receipts.find(r => r.id === id);
+                const person = window.people.find(p => p.id === receipt.personId);
                 
                 document.getElementById('receiptId').value = receipt.id;
                 document.getElementById('receiptType').value = receipt.type;
@@ -497,42 +572,9 @@
             openModal('receiptModal');
         }
 
-        function saveReceipt() {
-            const id = document.getElementById('receiptId').value;
-            const type = document.getElementById('receiptType').value;
-            const personId = Number(document.getElementById('receiptPersonId').value);
-            const amount = Number(document.getElementById('receiptAmount').value);
-            const details = document.getElementById('receiptDetails').value.trim() || 'دفعة';
-            const date = document.getElementById('receiptDate').value;
-
-            if(!personId) return alert('الرجاء تحديد واختيار شخص من القائمة الذكية المنسدلة أولاً');
-            if(!amount || amount <= 0) return alert('الرجاء إدخال مبلغ صحيح أكبر من صفر');
-
-            if(id) {
-                const index = receipts.findIndex(r => r.id == id);
-                receipts[index] = { ...receipts[index], type, personId, amount, details, date };
-            } else {
-                const lastDocNo = receipts.length > 0 ? Math.max(...receipts.map(r => r.docNo || 1000)) : 1000;
-                receipts.push({ id: Date.now(), docNo: lastDocNo + 1, type, personId, amount, details, date });
-            }
-
-            saveToLocalStorage();
-            closeModal('receiptModal');
-            
-            // تحويل المستخدم تلقائياً لتبويب الوصولات لمشاهدة الوصل الجديد المضاف
-            switchTab('receipts');
-        }
-
-        function deleteReceipt(id) {
-            if(confirm('هل أنت متأكد من حذف هذا الوصل نهائياً؟')) {
-                receipts = receipts.filter(r => r.id !== id);
-                saveToLocalStorage();
-            }
-        }
-
         function exportInvoiceImage(id) {
-            const receipt = receipts.find(r => r.id === id);
-            const person = people.find(p => p.id === receipt.personId);
+            const receipt = window.receipts.find(r => r.id === id);
+            const person = window.people.find(p => p.id === receipt.personId);
             const name = person ? person.name : 'شخص محذوف';
             const isKabid = receipt.type === 'قبض';
             const docNo = receipt.docNo || 1000;
@@ -595,15 +637,22 @@
             });
         }
 
+        // دالة الفلترة والـ Rendering الموحدة والتلقائية لجميع واجهات التطبيق المحدثة
         function renderAll() {
-            const searchVal = document.getElementById('searchInput').value.toLowerCase();
-            const personSearchVal = document.getElementById('personSearchField').value.toLowerCase();
-            const filterType = document.getElementById('filterType').value;
+            const searchInput = document.getElementById('searchInput');
+            const personSearchField = document.getElementById('personSearchField');
+            const filterTypeSelect = document.getElementById('filterType');
+
+            if (!searchInput || !personSearchField || !filterTypeSelect) return;
+
+            const searchVal = searchInput.value.toLowerCase();
+            const personSearchVal = personSearchField.value.toLowerCase();
+            const filterType = filterTypeSelect.value;
 
             let totalRec = 0;
             let totalExp = 0;
             
-            receipts.forEach(r => {
+            window.receipts.forEach(r => {
                 if(r.type === 'قبض') totalRec += r.amount;
                 else totalExp += r.amount;
             });
@@ -612,14 +661,14 @@
             document.getElementById('totalExpenses').innerText = formatMoney(totalExp);
             document.getElementById('finalBalance').innerText = formatMoney(totalRec - totalExp);
 
-            // فلترة وعرض الأشخاص
-            const filteredPeople = people.filter(p => p.name.toLowerCase().includes(personSearchVal));
+            // فلترة وعرض الحسابات والأشخاص
+            const filteredPeople = window.people.filter(p => p.name.toLowerCase().includes(personSearchVal));
             document.getElementById('peopleCount').innerText = filteredPeople.length;
             
             const peopleContainer = document.getElementById('peopleContainer');
             peopleContainer.innerHTML = filteredPeople.map(p => {
                 let pBalance = 0;
-                receipts.forEach(r => {
+                window.receipts.forEach(r => {
                     if(r.personId === p.id) {
                         if(r.type === 'قبض') pBalance += r.amount;
                         else pBalance -= r.amount;
@@ -650,9 +699,9 @@
                 `;
             }).join('');
 
-            // فلترة وعرض الوصولات بناءً على محددات الأرشيف
-            const filteredReceipts = receipts.filter(r => {
-                const person = people.find(p => p.id === r.personId);
+            // فلترة وأرشفة الوصولات
+            const filteredReceipts = window.receipts.filter(r => {
+                const person = window.people.find(p => p.id === r.personId);
                 const pName = person ? person.name.toLowerCase() : '';
                 const matchesSearch = pName.includes(searchVal) || String(r.docNo).includes(searchVal) || r.details.toLowerCase().includes(searchVal);
                 const matchesType = filterType === 'all' || r.type === filterType;
@@ -663,7 +712,7 @@
             const receiptsContainer = document.getElementById('receiptsContainer');
             
             receiptsContainer.innerHTML = filteredReceipts.map(r => {
-                const person = people.find(p => p.id === r.personId);
+                const person = window.people.find(p => p.id === r.personId);
                 const name = person ? person.name : 'شخص محذوف';
                 const isKabid = r.type === 'قبض';
                 const currentDocNo = r.docNo || 1000;
@@ -696,7 +745,8 @@
             }).join('');
         }
 
-        window.onload = loadLocalData;
+        // جعل دالة الـ render متاحة للـ Firebase Module
+        window.renderAll = renderAll;
     </script>
 </body>
 </html>
