@@ -131,7 +131,7 @@
                     <div class="bg-white/20 p-3 rounded-xl text-lg"><i class="fa-solid fa-arrow-down"></i></div>
                     <div class="text-left">
                         <p class="text-xs text-emerald-100 font-semibold">إجمالي القبض</p>
-                        <p id="totalReceipts" class="text-xl font-bold mt-1">٠ د.ع</p>
+                        <p id="totalReceipts" class="text-xl font-bold mt-1">0 د.ع</p>
                     </div>
                 </div>
 
@@ -139,7 +139,7 @@
                     <div class="bg-white/20 p-3 rounded-xl text-lg"><i class="fa-solid fa-arrow-up"></i></div>
                     <div class="text-left">
                         <p class="text-xs text-pink-100 font-semibold">إجمالي الصرف</p>
-                        <p id="totalExpenses" class="text-xl font-bold mt-1">٠ د.ع</p>
+                        <p id="totalExpenses" class="text-xl font-bold mt-1">0 د.ع</p>
                     </div>
                 </div>
 
@@ -147,7 +147,7 @@
                     <div class="bg-white/20 p-3 rounded-xl text-lg"><i class="fa-solid fa-briefcase"></i></div>
                     <div class="text-left">
                         <p class="text-xs text-orange-100 font-semibold">الرصيد النهائي</p>
-                        <p id="finalBalance" class="text-xl font-bold mt-1">٠ د.ع</p>
+                        <p id="finalBalance" class="text-xl font-bold mt-1">0 د.ع</p>
                     </div>
                 </div>
             </div>
@@ -424,7 +424,7 @@
         }
 
         function formatMoney(amount) {
-            return Number(amount).toLocaleString('ar-IQ') + " د.ع";
+            return Number(amount).toLocaleString('en-US') + " د.ع";
         }
 
         function closeModal(modalId) {
@@ -606,7 +606,7 @@
             const docNo = receipt.docNo || 1000;
             
             const formattedDate = receipt.date.replace(/-/g, '/');
-            const currentTime = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
             const templateHtml = `
                 <div class="invoice-print-template" style="display: block;">
@@ -706,7 +706,7 @@
                         <div class="text-right">
                             <div class="flex items-center gap-2 justify-end mb-1">
                                 <span class="${p.role === 'customer' ? 'bg-cyan-50 text-cyan-600' : 'bg-purple-50 text-purple-600'} text-xs font-semibold px-2 py-0.5 rounded-md">${p.role === 'customer' ? 'زبون' : 'مجهز'}</span>
-                                class="font-bold text-gray-800 text-base">${p.name}</h3>
+                                <h3 class="font-bold text-gray-800 text-base">${p.name}</h3>
                             </div>
                             <p class="text-xs text-gray-500 flex items-center gap-1 justify-end" style="direction: ltr;">${p.phone || 'بلا هاتف'} <i class="fa-solid fa-phone text-[10px]"></i></p>
                             <p class="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-end">${p.address || 'بلا عنوان'} <i class="fa-solid fa-location-dot text-[10px]"></i></p>
