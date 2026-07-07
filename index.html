@@ -97,48 +97,85 @@
         </header>
 
         <main class="max-w-6xl w-full mx-auto px-4 mt-24 flex-1">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex flex-wrap gap-2 w-full md:w-auto justify-center md:justify-start">
-                    <button onclick="openReceiptModal()" class="bg-[#0284c7] hover:bg-[#0369a1] text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition shadow-sm">
-                        <i class="fa-solid fa-plus"></i> وصل جديد
-                    </button>
-                    <button onclick="openPersonModal('customer')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition">
-                        <i class="fa-solid fa-user-plus text-gray-400"></i> إضافة زبون
-                    </button>
-                    <button onclick="openPersonModal('supplier')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition">
-                        <i class="fa-solid fa-truck-ramp-box text-gray-400"></i> إضافة مجهز
-                    </button>
-                </div>
-
-                <div class="flex gap-2 w-full md:w-auto max-w-lg flex-1">
-                    <div class="relative flex-1">
-                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                        </span>
-                        <input type="text" id="searchInput" oninput="renderAll()" placeholder="ابحث باسم الشخص أو رقم الوصل أو البيان..." class="w-full pl-4 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white transition text-right">
+            
+            <section id="pageHome" class="block animate-fadeIn">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center max-w-2xl mx-auto mt-8">
+                    <div class="w-16 h-16 bg-emerald-50 text-[#047857] rounded-full flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+                        <i class="fa-solid fa-sliders"></i>
                     </div>
-                    <select id="filterType" onchange="renderAll()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#047857]">
-                        <option value="all">كل الوصولات</option>
-                        <option value="قبض">وصل قبض</option>
-                        <option value="صرف">وصل صرف</option>
-                    </select>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">الوصول السريع للعمليات</h3>
+                    <p class="text-xs text-gray-400 mb-6">يمكنك تسجيل السندات الجديدة أو إضافة العملاء والمجهزين مباشرة من هنا، واستخدم شريط التنقل السفلي لإدارة الحسابات والوصولات.</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <button onclick="openReceiptModal()" class="bg-[#0284c7] hover:bg-[#0369a1] text-white p-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition shadow-sm">
+                            <i class="fa-solid fa-plus"></i> إنشاء وصل جديد
+                        </button>
+                        <button onclick="openPersonModal('customer')" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 p-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition shadow-sm">
+                            <i class="fa-solid fa-user-plus text-cyan-600"></i> إضافة زبون جديد
+                        </button>
+                        <button onclick="openPersonModal('supplier')" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 p-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition shadow-sm">
+                            <i class="fa-solid fa-truck-ramp-box text-purple-600"></i> إضافة مجهز جديد
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <section class="mt-8">
-                <h2 class="text-gray-500 text-sm font-bold mb-3 flex items-center gap-2">
-                    الأشخاص <span id="peopleCount" class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">0</span>
-                </h2>
+            <section id="pagePeople" class="hidden animate-fadeIn">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+                    <h2 class="text-gray-700 text-base font-bold flex items-center gap-2 w-full sm:w-auto">
+                        <i class="fa-solid fa-users text-[#047857]"></i> إدارة الأشخاص والحسابات 
+                        <span id="peopleCount" class="bg-emerald-100 text-[#047857] text-xs px-2 py-0.5 rounded-full">0</span>
+                    </h2>
+                    <div class="relative w-full sm:w-64">
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </span>
+                        <input type="text" id="personSearchField" oninput="renderAll()" placeholder="ابحث باسم الشخص..." class="w-full pl-4 pr-9 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#047857] text-right shadow-sm transition focus:bg-white">
+                    </div>
+                </div>
                 <div id="peopleContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </section>
 
-            <section class="mt-8">
-                <h2 class="text-gray-500 text-sm font-bold mb-3 flex items-center gap-2">
-                    الوصولات <span id="receiptsCount" class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">0</span>
-                </h2>
+            <section id="pageReceipts" class="hidden animate-fadeIn">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+                    <h2 class="text-gray-700 text-base font-bold flex items-center gap-2 w-full md:w-auto">
+                        <i class="fa-solid fa-receipt text-[#0284c7]"></i> أرشيف السندات والوصولات
+                        <span id="receiptsCount" class="bg-blue-100 text-[#0284c7] text-xs px-2 py-0.5 rounded-full">0</span>
+                    </h2>
+                    
+                    <div class="flex gap-2 w-full md:w-auto max-w-lg flex-1">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </span>
+                            <input type="text" id="searchInput" oninput="renderAll()" placeholder="ابحث برقم الوصل، الاسم أو البيان..." class="w-full pl-4 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white transition text-right">
+                        </div>
+                        <select id="filterType" onchange="renderAll()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                            <option value="all">كل السندات</option>
+                            <option value="قبض">وصل قبض</option>
+                            <option value="صرف">وصل صرف</option>
+                        </select>
+                    </div>
+                </div>
+                
                 <div id="receiptsContainer" class="space-y-3"></div>
             </section>
         </main>
+    </div>
+
+    <div class="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] z-40 px-4 py-2 flex justify-around items-center max-w-md mx-auto rounded-t-2xl md:max-w-6xl">
+        <button onclick="switchTab('home')" id="tabHomeBtn" class="flex flex-col items-center gap-1 text-[#047857] font-bold text-xs transition-all duration-200 flex-1 py-1">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span>الرئيسية</span>
+        </button>
+        <button onclick="switchTab('people')" id="tabPeopleBtn" class="flex flex-col items-center gap-1 text-gray-400 font-medium text-xs transition-all duration-200 flex-1 py-1">
+            <i class="fa-solid fa-users text-xl"></i>
+            <span>الحسابات</span>
+        </button>
+        <button onclick="switchTab('receipts')" id="tabReceiptsBtn" class="flex flex-col items-center gap-1 text-gray-400 font-medium text-xs transition-all duration-200 flex-1 py-1">
+            <i class="fa-solid fa-receipt text-xl"></i>
+            <span>الوصولات</span>
+        </button>
     </div>
 
     <div id="printCaptureContainer" class="fixed top-[-9999px] left-[-9999px]"></div>
@@ -221,6 +258,38 @@
         let receipts = [];
         let deferredPrompt;
 
+        // دالة التبديل الذكية بين الصفحات الثلاث
+        function switchTab(tab) {
+            const pageHome = document.getElementById('pageHome');
+            const pagePeople = document.getElementById('pagePeople');
+            const pageReceipts = document.getElementById('pageReceipts');
+            
+            const btnHome = document.getElementById('tabHomeBtn');
+            const btnPeople = document.getElementById('tabPeopleBtn');
+            const btnReceipts = document.getElementById('tabReceiptsBtn');
+
+            // إخفاء كل الصفحات أولاً
+            pageHome.classList.add('hidden');
+            pagePeople.classList.add('hidden');
+            pageReceipts.classList.add('hidden');
+
+            // تصفير تنسيق الأزرار
+            btnHome.className = "flex flex-col items-center gap-1 text-gray-400 font-medium text-xs transition-all duration-200 flex-1 py-1";
+            btnPeople.className = "flex flex-col items-center gap-1 text-gray-400 font-medium text-xs transition-all duration-200 flex-1 py-1";
+            btnReceipts.className = "flex flex-col items-center gap-1 text-gray-400 font-medium text-xs transition-all duration-200 flex-1 py-1";
+
+            if (tab === 'home') {
+                pageHome.classList.remove('hidden');
+                btnHome.className = "flex flex-col items-center gap-1 text-[#047857] font-bold text-xs transition-all duration-200 flex-1 py-1";
+            } else if (tab === 'people') {
+                pagePeople.classList.remove('hidden');
+                btnPeople.className = "flex flex-col items-center gap-1 text-[#047857] font-bold text-xs transition-all duration-200 flex-1 py-1";
+            } else if (tab === 'receipts') {
+                pageReceipts.classList.remove('hidden');
+                btnReceipts.className = "flex flex-col items-center gap-1 text-[#0284c7] font-bold text-xs transition-all duration-200 flex-1 py-1";
+            }
+        }
+
         // تسجيل ملف الـ Service Worker الخارجي بشكل رسمي
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -283,6 +352,7 @@
             renderAll();
         }
 
+        // تنسيق المبالغ لتظهر بالأرقام الإنكليزية المعتادة
         function formatMoney(amount) {
             return Number(amount).toLocaleString('en-US') + " د.ع";
         }
@@ -343,6 +413,9 @@
 
             saveToLocalStorage();
             closeModal('personModal');
+            
+            // تحويل المستخدم تلقائياً لتبويب الحسابات لمشاهدة الشخص المضاف
+            switchTab('people');
         }
 
         function deletePerson(id) {
@@ -445,6 +518,9 @@
 
             saveToLocalStorage();
             closeModal('receiptModal');
+            
+            // تحويل المستخدم تلقائياً لتبويب الوصولات لمشاهدة الوصل الجديد المضاف
+            switchTab('receipts');
         }
 
         function deleteReceipt(id) {
@@ -462,7 +538,7 @@
             const docNo = receipt.docNo || 1000;
             
             const formattedDate = receipt.date.replace(/-/g, '/');
-            const currentTime = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
             const templateHtml = `
                 <div class="invoice-print-template" style="display: block;">
@@ -521,6 +597,7 @@
 
         function renderAll() {
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const personSearchVal = document.getElementById('personSearchField').value.toLowerCase();
             const filterType = document.getElementById('filterType').value;
 
             let totalRec = 0;
@@ -535,7 +612,8 @@
             document.getElementById('totalExpenses').innerText = formatMoney(totalExp);
             document.getElementById('finalBalance').innerText = formatMoney(totalRec - totalExp);
 
-            const filteredPeople = people.filter(p => p.name.toLowerCase().includes(searchVal));
+            // فلترة وعرض الأشخاص
+            const filteredPeople = people.filter(p => p.name.toLowerCase().includes(personSearchVal));
             document.getElementById('peopleCount').innerText = filteredPeople.length;
             
             const peopleContainer = document.getElementById('peopleContainer');
@@ -572,6 +650,7 @@
                 `;
             }).join('');
 
+            // فلترة وعرض الوصولات بناءً على محددات الأرشيف
             const filteredReceipts = receipts.filter(r => {
                 const person = people.find(p => p.id === r.personId);
                 const pName = person ? person.name.toLowerCase() : '';
