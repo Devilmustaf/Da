@@ -266,15 +266,15 @@
     </div>
 
     <script>
-        // هنا قمنا بوضع كود الإعدادات الخاص بمشروعك الظاهر في الصورة بالكامل وبشكل مباشر
+        // إعدادات البيئة لـ Firebase الخاصة بك المدمجة حديثاً
         const firebaseConfig = {
-            apiKey: "AIzaSyCDiVLuKgBqs0ZdxtLhQjcAdAN3rFF30k",
+            apiKey: "AIzaSyCDiVLuKgKBqs0ZdxtLhQjcAdAN3rFF3Ok",
             authDomain: "account-book-3978f.firebaseapp.com",
             projectId: "account-book-3978f",
             storageBucket: "account-book-3978f.firebasestorage.app",
-            messagingSenderId: "9996087634",
-            appId: "1:9996087634:web:f61581a5a5ae3b2652580b",
-            measurementId: "G-GJLRTBEHS"
+            messagingSenderId: "99966087634",
+            appId: "1:99966087634:web:f61581a5a5ae3b2652580b",
+            measurementId: "G-GJLRTBEHSF"
         };
 
         // تهيئة الـ SDK
@@ -288,7 +288,7 @@
         let isSignUpMode = true;
         let deferredPrompt;
 
-        // مراقبة حالة تسجيل دخول المستخدم (الربط الحي السحابي)
+        // مراقبة الجلسة وحالة تسجيل دخول المستخدم بشكل حي وسحابي
         auth.onAuthStateChanged(user => {
             const authContainer = document.getElementById('authContainer');
             const appContent = document.getElementById('appContent');
@@ -305,11 +305,10 @@
             }
         });
 
-        // مزامنة البيانات المباشرة والسحابية المخصصة لكل مستخدم بشكل مستقل
+        // مزامنة حية سحابية للبيانات مقسمة حسب المعرّف الفريد لكل حساب مستخدم بشكل مستقل وآمن
         function setupRealtimeSync() {
             if(!currentUser) return;
 
-            // استماع حي لجدول الأشخاص
             db.collection("users").doc(currentUser.uid).collection("people")
             .onSnapshot((snapshot) => {
                 people = [];
@@ -319,7 +318,6 @@
                 renderAll();
             }, err => console.error("خطأ مزامنة الأشخاص:", err));
 
-            // استماع حي لجدول الوصولات
             db.collection("users").doc(currentUser.uid).collection("receipts")
             .onSnapshot((snapshot) => {
                 receipts = [];
@@ -330,7 +328,7 @@
             }, err => console.error("خطأ مزامنة الوصولات:", err));
         }
 
-        // التعامل مع إنشاء الحساب أو تسجيل الدخول بالبريد الإلكتروني
+        // معالجة تسجيل الدخول وإنشاء الحسابات بالبريد الإلكتروني
         function handleEmailAuth() {
             const email = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value.trim();
@@ -342,11 +340,11 @@
                 .catch(err => alert('خطأ في إنشاء الحساب: ' + err.message));
             } else {
                 auth.signInWithEmailAndPassword(email, password)
-                .catch(err => alert('خطأ في الدخول: تأكد من البيانات المرسلة. ' + err.message));
+                .catch(err => alert('خطأ في الدخول: تأكد من البيانات المرسلة وعملية تفعيل المزود. ' + err.message));
             }
         }
 
-        // تسجيل الدخول السريع عبر حسابات جوجل
+        // الدخول السريع عبر Google Accounts
         function handleGoogleAuth() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
@@ -365,11 +363,10 @@
             document.getElementById('toggleAuthModeBtn').innerText = isSignUpMode ? 'لديك حساب بالفعل؟ تسجيل الدخول' : 'ليس لديك حساب؟ إنشاء حساب جديد';
         }
 
-        // تسجيل ملف الـ Service Worker الخارجي بشكل رسمي
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                .then(() => console.log('تم تسجيل Service Worker الخارجي بنجاح'))
+                .then(() => console.log('تم تسجيل Service Worker بنجاح'))
                 .catch(err => console.log('فشل تسجيل الـ Service Worker:', err));
             });
         }
