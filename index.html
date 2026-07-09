@@ -84,7 +84,7 @@
         </div>
     </div>
 
-    <div id="appContent" class="transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div id="appContent" class="transition-opacity duration-300 opacity-0 pointer-events-none hidden">
         <header class="bg-[#047857] text-white pt-6 pb-24 px-4 md:px-8 rounded-b-[2rem] shadow-lg relative">
             <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                 
@@ -336,13 +336,13 @@
             if (user) {
                 currentUser = user;
                 authContainer.classList.add('hidden');
-                appContent.classList.remove('opacity-0', 'pointer-events-none');
+                appContent.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
                 setupRealtimeSync();
                 loadUserProfile();
             } else {
                 currentUser = null;
                 authContainer.classList.remove('hidden');
-                appContent.classList.add('opacity-0', 'pointer-events-none');
+                appContent.classList.add('hidden', 'opacity-0', 'pointer-events-none');
             }
         });
 
@@ -368,7 +368,6 @@
             });
         }
 
-        // دالة التنقل الصريح والمصلح فورياً وبدون مشاكل
         function scrollToSection(id) {
             const element = document.getElementById(id);
             if(element) {
@@ -407,7 +406,6 @@
             return Number(amount).toLocaleString('en-US') + " د.ع";
         }
 
-        // إصلاح الإغلاق التام للنوافذ المنبثقة بنظام الحجب الفوري للـ DOM
         function closeModal(modalId) {
             const modal = document.getElementById(modalId);
             modal.classList.add('hidden');
@@ -572,7 +570,6 @@
             }
         }
 
-        // دوال حفظ واسترجاع ملف المستخدم السحابي (الجديد)
         function saveUserProfile() {
             if(!currentUser) return;
             const name = document.getElementById('userProfileName').value.trim();
