@@ -15,18 +15,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- استدعاء سكريبتات الفايربيس المستقرة والمتوافقة مع الكود القديم والجديد -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
-        .modal { transition: opacity 0.2s ease, transform 0.2s ease; z-index: 100; }
-        body.modal-active { overflow: hidden; }
+        .modal-active { overflow: hidden; }
         .bottom-nav-space { padding-bottom: 100px; }
         
         .invoice-print-template {
@@ -39,10 +40,15 @@
             font-family: 'Cairo', sans-serif;
             box-sizing: border-box;
         }
+        /* إخفاء السكرول بار الافتراضي لتجربة مستخدم أفضل */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col bottom-nav-space">
 
+    <!-- شاشة تسجيل الدخول والإنشاء -->
     <div id="authContainer" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-[110] p-4">
         <div class="bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 text-right border border-slate-700">
             <div class="flex justify-center mb-4">
@@ -84,6 +90,7 @@
         </div>
     </div>
 
+    <!-- محتوى التطبيق الرئيسي -->
     <div id="appContent" class="transition-opacity duration-300 opacity-0 pointer-events-none hidden">
         <header class="bg-[#047857] text-white pt-6 pb-24 px-4 md:px-8 rounded-b-[2rem] shadow-lg relative">
             <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
@@ -116,6 +123,7 @@
                 </div>
             </div>
 
+            <!-- كروت الرصيد -->
             <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-full max-w-6xl px-4 grid grid-cols-3 gap-2 md:gap-4">
                 <div class="bg-[#059669] text-white p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-center border border-emerald-500 text-center md:text-right">
                     <div class="w-full">
@@ -141,6 +149,7 @@
         </header>
 
         <main class="max-w-6xl w-full mx-auto px-4 mt-16 md:mt-20 flex-1 space-y-8">
+            <!-- شريط التحكم والبحث -->
             <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-3">
                 <div class="grid grid-cols-2 gap-2 w-full md:w-auto flex-1 md:flex-none">
                     <button onclick="openPersonModal('customer')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
@@ -166,6 +175,7 @@
                 </div>
             </div>
 
+            <!-- قسم الوصولات والحركات -->
             <section id="section_receipts" class="scroll-mt-6">
                 <h2 class="text-gray-500 text-xs font-bold mb-2.5 flex items-center gap-1.5">
                     <i class="fa-solid fa-receipt text-gray-400"></i> سجل السندات والوصولات <span id="receiptsCount" class="bg-gray-200 text-gray-700 text-[10px] px-2 py-0.5 rounded-full font-sans">0</span>
@@ -173,6 +183,7 @@
                 <div id="receiptsContainer" class="space-y-2.5"></div>
             </section>
 
+            <!-- قسم الأشخاص -->
             <section id="section_people" class="scroll-mt-6">
                 <h2 class="text-gray-500 text-xs font-bold mb-2.5 flex items-center gap-1.5">
                     <i class="fa-solid fa-users text-gray-400"></i> الحسابات والأشخاص <span id="peopleCount" class="bg-gray-200 text-gray-700 text-[10px] px-2 py-0.5 rounded-full font-sans">0</span>
@@ -180,6 +191,7 @@
                 <div id="peopleContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
             </section>
 
+            <!-- قسم معلومات الحساب الشخصي للمستخدم -->
             <section id="section_profile" class="scroll-mt-6 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                 <h2 class="text-gray-700 text-sm font-bold mb-4 flex items-center gap-2 border-b pb-2">
                     <i class="fa-solid fa-id-card text-[#047857]"></i> معلومات مستخدم التطبيق (المندوب)
@@ -210,6 +222,7 @@
             </section>
         </main>
 
+        <!-- شريط التنقل السفلي المطور -->
         <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] z-[90] flex justify-around items-center h-16 px-4 safe-bottom">
             <button onclick="scrollToSection('section_receipts')" class="flex flex-col items-center justify-center flex-1 h-full text-gray-500 hover:text-[#047857] transition">
                 <i class="fa-solid fa-receipt text-lg"></i>
@@ -236,6 +249,7 @@
 
     <div id="printCaptureContainer" class="fixed top-[-9999px] left-[-9999px]"></div>
 
+    <!-- النافذة المنبثقة لإضافة/تعديل شخص -->
     <div id="personModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[105]">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden p-5 text-right">
             <h3 id="personModalTitle" class="text-base font-bold text-gray-800 mb-4 pb-2 border-b">إضافة حساب جديد</h3>
@@ -262,6 +276,7 @@
         </div>
     </div>
 
+    <!-- النافذة المنبثقة لإضافة/تعديل وصل -->
     <div id="receiptModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[105]">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden p-5 text-right">
             <h3 id="receiptModalTitle" class="text-base font-bold text-gray-800 mb-4 pb-2 border-b">إنشاء مستند سداد جديد</h3>
@@ -318,12 +333,15 @@
             measurementId: "G-GJLRTBEHSF"
         };
 
-        firebase.initializeApp(firebaseConfig);
+        // التهيئة بنظام الـ SDK v8 المستقر والمثالي لتجنب مشاكل الوحدات
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const auth = firebase.auth();
         const db = firebase.firestore();
 
         db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
-        db.enablePersistence().catch(err => console.log("Persistence error:", err.code));
+        db.enablePersistence().catch(err => console.log("Persistence offline cache status:", err.code));
 
         let people = [];
         let receipts = [];
@@ -356,7 +374,7 @@
                     people.push({ id: doc.id, ...doc.data() });
                 });
                 renderAll();
-            });
+            }, error => console.error("People snapshot sync error: ", error));
 
             db.collection("users").doc(currentUser.uid).collection("receipts")
             .onSnapshot((snapshot) => {
@@ -365,9 +383,10 @@
                     receipts.push({ id: doc.id, ...doc.data() });
                 });
                 renderAll();
-            });
+            }, error => console.error("Receipts snapshot sync error: ", error));
         }
 
+        // إصلاح دالة التنقل والتمرير السلس لحسابي وكافة الحقول
         function scrollToSection(id) {
             const element = document.getElementById(id);
             if(element) {
@@ -406,17 +425,25 @@
             return Number(amount).toLocaleString('en-US') + " د.ع";
         }
 
+        // دالة موثوقة لإغلاق النوافذ المنبثقة فوراً
         function closeModal(modalId) {
             const modal = document.getElementById(modalId);
-            modal.classList.add('hidden');
-            document.body.classList.remove('modal-active');
-            if(modalId === 'receiptModal') document.getElementById('personDropdownMenu').classList.add('hidden');
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.classList.remove('modal-active');
+            }
+            if(modalId === 'receiptModal') {
+                const menu = document.getElementById('personDropdownMenu');
+                if(menu) menu.classList.add('hidden');
+            }
         }
 
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
-            modal.classList.remove('hidden');
-            document.body.classList.add('modal-active');
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.classList.add('modal-active');
+            }
         }
 
         function openPersonModal(role, id = null) {
@@ -438,6 +465,7 @@
             openModal('personModal');
         }
 
+        // إصلاح دالة الحفظ مع ضمان الإغلاق الفوري للشاشة المنبثقة
         function savePerson() {
             const id = document.getElementById('personId').value;
             const name = document.getElementById('personName').value.trim();
@@ -450,9 +478,13 @@
             const ref = db.collection("users").doc(currentUser.uid).collection("people");
 
             if(id) {
-                ref.doc(id).update(personData).then(() => closeModal('personModal'));
+                ref.doc(id).update(personData)
+                .then(() => { closeModal('personModal'); })
+                .catch(err => alert("حدث خطأ أثناء التحديث السحابي: " + err.message));
             } else {
-                ref.doc(String(Date.now())).set(personData).then(() => closeModal('personModal'));
+                ref.doc(String(Date.now())).set(personData)
+                .then(() => { closeModal('personModal'); })
+                .catch(err => alert("حدث خطأ أثناء الحفظ السحابي: " + err.message));
             }
         }
 
@@ -464,7 +496,7 @@
                 receipts.forEach(r => {
                     if(String(r.personId) === id) batch.delete(userRef.collection("receipts").doc(r.id));
                 });
-                batch.commit();
+                batch.commit().catch(err => console.error("Delete batch error:", err));
             }
         }
 
@@ -555,12 +587,14 @@
             if(id) {
                 const existing = receipts.find(r => r.id === id);
                 ref.doc(id).update({ type, personId, amount, details, date, docNo: existing.docNo || 1001 })
-                .then(() => closeModal('receiptModal'));
+                .then(() => closeModal('receiptModal'))
+                .catch(err => alert(err.message));
             } else {
                 const lastDocNo = receipts.length > 0 ? Math.max(...receipts.map(r => Number(r.docNo) || 1000)) : 1000;
                 const newDocNo = lastDocNo + 1;
                 ref.doc(String(Date.now())).set({ docNo: newDocNo, type, personId, amount, details, date })
-                .then(() => closeModal('receiptModal'));
+                .then(() => closeModal('receiptModal'))
+                .catch(err => alert(err.message));
             }
         }
 
@@ -601,7 +635,7 @@
                         document.getElementById('userWelcomeTitle').innerText = `المندوب: ${data.name} (${data.company || 'مستقل'})`;
                     }
                 }
-            });
+            }).catch(err => console.log("Profile read error:", err));
         }
 
         function clearAllData() {
@@ -686,8 +720,11 @@
         }
 
         function renderAll() {
-            const searchVal = document.getElementById('searchInput').value.toLowerCase();
-            const filterType = document.getElementById('filterType').value;
+            const searchInput = document.getElementById('searchInput');
+            const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
+            
+            const filterTypeElement = document.getElementById('filterType');
+            const filterType = filterTypeElement ? filterTypeElement.value : 'all';
 
             let totalRec = 0;
             let totalExp = 0;
