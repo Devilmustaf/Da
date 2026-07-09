@@ -2,35 +2,34 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>دفتر القبض والصرف الاحترافي</title>
     
-    <!-- تهيئة خصائص العرض للتطبيق المستقل -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="#047857">
     <meta name="apple-mobile-web-app-title" content="دفتر الحسابات">
     <meta name="theme-color" content="#047857">
 
-    <!-- ربط ملف الـ Manifest الخارجي الرسمي -->
     <link rel="manifest" href="manifest.json">
 
-    <!-- المكتبات الخارجية -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2=family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <!-- مكتبات Firebase CDN (الإصدار المتوافق v9 Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
-        .modal { transition: opacity 0.25s ease; }
+        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .modal { transition: opacity 0.2s ease, transform 0.2s ease; z-index: 100; }
         body.modal-active { overflow: hidden; }
+        
+        /* تحسينات لضمان عدم تداخل عناصر الواجهة على الهواتف */
+        .bottom-nav-space { padding-bottom: 90px; }
         
         .invoice-print-template {
             display: none;
@@ -44,10 +43,9 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col pb-24">
+<body class="min-h-screen flex flex-col bottom-nav-space">
 
-    <!-- شاشة تسجيل الدخول والإنشاء -->
-    <div id="authContainer" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50 p-4">
+    <div id="authContainer" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-[110] p-4">
         <div class="bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 text-right border border-slate-700">
             <div class="flex justify-center mb-4">
                 <div class="bg-[#059669] p-4 rounded-2xl text-white text-3xl shadow-lg">
@@ -57,7 +55,6 @@
             <h2 class="text-xl font-bold text-white text-center mb-1">دفتر القبض والصرف الذكي</h2>
             <p class="text-xs text-slate-400 text-center mb-6">بالدينار العراقي - نظام الحسابات السحابي الآمن</p>
 
-            <!-- واجهة البريد الإلكتروني وكلمة المرور -->
             <div id="emailAuthView" class="space-y-4">
                 <div>
                     <label class="block text-sm text-slate-300 mb-1">البريد الإلكتروني</label>
@@ -82,7 +79,6 @@
                     <div class="flex-grow border-t border-slate-700"></div>
                 </div>
 
-                <!-- زر جوجل لتسجيل الدخول السريع -->
                 <button onclick="handleGoogleAuth()" class="w-full bg-[#2563eb] hover:bg-blue-700 text-white p-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg">
                     <i class="fa-brands fa-google text-base"></i> تسجيل الدخول باستخدام Google
                 </button>
@@ -90,79 +86,75 @@
         </div>
     </div>
 
-    <!-- محتوى التطبيق الرئيسي -->
-    <div id="appContent" class="transition-opacity duration-500 opacity-0 pointer-events-none">
-        <header class="bg-[#047857] text-white pt-6 pb-20 px-4 md:px-8 rounded-b-[2rem] shadow-lg relative">
+    <div id="appContent" class="transition-opacity duration-300 opacity-0 pointer-events-none">
+        <header class="bg-[#047857] text-white pt-6 pb-24 px-4 md:px-8 rounded-b-[2rem] shadow-lg relative">
             <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                 
                 <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-start">
-                    <div class="flex items-center gap-2 bg-black/10 px-4 py-2 rounded-xl border border-white/10">
-                        <div class="w-8 h-8 rounded-full border border-white/20 bg-emerald-800 flex items-center justify-center text-white text-xs">
+                    <div class="flex items-center gap-2 bg-black/10 px-3 py-1.5 rounded-xl border border-white/10">
+                        <div class="w-7 h-7 rounded-full border border-white/20 bg-emerald-800 flex items-center justify-center text-white text-xs">
                             <i class="fa-solid fa-cloud shadow-sm"></i>
                         </div>
                         <div class="text-right">
-                            <p class="text-xs font-bold leading-none">المزامنة السحابية</p>
-                            <p id="cloudStatus" class="text-[10px] text-emerald-200 mt-1">متصل ونشط</p>
+                            <p class="text-[11px] font-bold leading-none">المزامنة السحابية</p>
+                            <p id="cloudStatus" class="text-[9px] text-emerald-200 mt-0.5">متصل ونشط</p>
                         </div>
                     </div>
 
-                    <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-md border border-red-500">
+                    <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-md border border-red-500">
                         <i class="fa-solid fa-right-from-bracket"></i> خروج
                     </button>
 
-                    <button id="installBtn" onclick="triggerPwaInstall()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-md border border-amber-400 animate-pulse">
-                        <i class="fa-solid fa-mobile-screen-button text-sm"></i> تثبيت على الشاشة الرئيسية
+                    <button id="installBtn" onclick="triggerPwaInstall()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-md border border-amber-400 animate-pulse">
+                        <i class="fa-solid fa-mobile-screen-button text-sm"></i> تثبيت التطبيق
                     </button>
                 </div>
                 
-                <div class="text-center md:text-right flex items-center gap-3">
+                <div class="text-center md:text-right flex items-center gap-3 w-full md:w-auto justify-center md:justify-end">
                     <div>
-                        <h1 class="text-2xl font-bold">دفتر القبض والصرف</h1>
-                        <p class="text-xs text-emerald-200 mt-1">بالدينار العراقي - نظام ذكي ومستقل</p>
+                        <h1 class="text-xl md:text-2xl font-bold">دفتر القبض والصرف</h1>
+                        <p class="text-xs text-emerald-200 mt-0.5">بالدينار العراقي - نظام ذكي ومستقل</p>
                     </div>
-                    <div class="bg-white/10 p-3 rounded-full text-xl flex items-center justify-center">
+                    <div class="bg-white/10 p-3 rounded-full text-xl flex items-center justify-center hidden md:flex">
                         <i class="fa-solid fa-wallet"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-full max-w-6xl px-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-[#059669] text-white p-4 rounded-2xl shadow-md flex justify-between items-center border border-emerald-500">
-                    <div class="bg-white/20 p-3 rounded-xl text-lg"><i class="fa-solid fa-arrow-down"></i></div>
-                    <div class="text-left">
-                        <p class="text-xs text-emerald-100 font-semibold">إجمالي القبض</p>
-                        <p id="totalReceipts" class="text-xl font-bold mt-1">0 د.ع</p>
+            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-full max-w-6xl px-4 grid grid-cols-3 gap-2 md:gap-4">
+                <div class="bg-[#059669] text-white p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-center border border-emerald-500 text-center md:text-right">
+                    <div class="bg-white/20 p-2 rounded-lg text-sm md:text-lg hidden md:block"><i class="fa-solid fa-arrow-down"></i></div>
+                    <div class="w-full">
+                        <p class="text-[10px] md:text-xs text-emerald-100 font-semibold leading-none">إجمالي القبض</p>
+                        <p id="totalReceipts" class="text-xs md:text-xl font-bold mt-1 font-sans">0 د.ع</p>
                     </div>
                 </div>
 
-                <div class="bg-[#db2777] text-white p-4 rounded-2xl shadow-md flex justify-between items-center border border-pink-500">
-                    <div class="bg-white/20 p-3 rounded-xl text-lg"><i class="fa-solid fa-arrow-up"></i></div>
-                    <div class="text-left">
-                        <p class="text-xs text-pink-100 font-semibold">إجمالي الصرف</p>
-                        <p id="totalExpenses" class="text-xl font-bold mt-1">0 د.ع</p>
+                <div class="bg-[#db2777] text-white p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-center border border-pink-500 text-center md:text-right">
+                    <div class="bg-white/20 p-2 rounded-lg text-sm md:text-lg hidden md:block"><i class="fa-solid fa-arrow-up"></i></div>
+                    <div class="w-full">
+                        <p class="text-[10px] md:text-xs text-pink-100 font-semibold leading-none">إجمالي الصرف</p>
+                        <p id="totalExpenses" class="text-xs md:text-xl font-bold mt-1 font-sans">0 د.ع</p>
                     </div>
                 </div>
 
-                <div class="bg-[#ea580c] text-white p-4 rounded-2xl shadow-md flex justify-between items-center border border-orange-500">
-                    <div class="bg-white/20 p-3 rounded-xl text-lg"><i class="fa-solid fa-briefcase"></i></div>
-                    <div class="text-left">
-                        <p class="text-xs text-orange-100 font-semibold">الرصيد النهائي</p>
-                        <p id="finalBalance" class="text-xl font-bold mt-1">0 د.ع</p>
+                <div class="bg-[#ea580c] text-white p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-center border border-orange-500 text-center md:text-right">
+                    <div class="bg-white/20 p-2 rounded-lg text-sm md:text-lg hidden md:block"><i class="fa-solid fa-briefcase"></i></div>
+                    <div class="w-full">
+                        <p class="text-[10px] md:text-xs text-orange-100 font-semibold leading-none">الرصيد النهائي</p>
+                        <p id="finalBalance" class="text-xs md:text-xl font-bold mt-1 font-sans">0 د.ع</p>
                     </div>
                 </div>
             </div>
         </header>
 
-        <main class="max-w-6xl w-full mx-auto px-4 mt-24 flex-1">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex flex-wrap gap-2 w-full md:w-auto justify-center md:justify-start">
-                    <button onclick="openReceiptModal()" class="bg-[#0284c7] hover:bg-[#0369a1] text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition shadow-sm">
-                        <i class="fa-solid fa-plus"></i> وصل جديد
-                    </button>
-                    <button onclick="openPersonModal('customer')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition">
+        <main class="max-w-6xl w-full mx-auto px-4 mt-16 md:mt-20 flex-1">
+            <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-3">
+                <div class="grid grid-cols-2 gap-2 w-full md:w-auto flex-1 md:flex-none">
+                    <button onclick="openPersonModal('customer')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
                         <i class="fa-solid fa-user-plus text-gray-400"></i> إضافة زبون
                     </button>
-                    <button onclick="openPersonModal('supplier')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition">
+                    <button onclick="openPersonModal('supplier')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
                         <i class="fa-solid fa-truck-ramp-box text-gray-400"></i> إضافة مجهز
                     </button>
                 </div>
@@ -170,128 +162,127 @@
                 <div class="flex gap-2 w-full md:w-auto max-w-lg flex-1">
                     <div class="relative flex-1">
                         <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
                         </span>
-                        <input type="text" id="searchInput" oninput="renderAll()" placeholder="ابحث باسم الشخص أو رقم الوصل أو البيان..." class="w-full pl-4 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white transition text-right">
+                        <input type="text" id="searchInput" oninput="renderAll()" placeholder="ابحث باسم الشخص، رقم الوصل..." class="w-full pl-4 pr-9 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white transition text-right">
                     </div>
-                    <select id="filterType" onchange="renderAll()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#047857]">
-                        <option value="all">كل الوصولات</option>
-                        <option value="قبض">وصل قبض</option>
-                        <option value="صرف">وصل صرف</option>
+                    <select id="filterType" onchange="renderAll()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-2 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                        <option value="all">الكل</option>
+                        <option value="قبض">قبض</option>
+                        <option value="صرف">صرف</option>
                     </select>
                 </div>
             </div>
 
-            <section class="mt-8">
-                <h2 class="text-gray-500 text-sm font-bold mb-3 flex items-center gap-2">
-                    الأشخاص <span id="peopleCount" class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">0</span>
+            <section id="section_people" class="mt-6">
+                <h2 class="text-gray-500 text-xs font-bold mb-2.5 flex items-center gap-1.5">
+                    <i class="fa-solid fa-users text-gray-400"></i> الحسابات والأشخاص <span id="peopleCount" class="bg-gray-200 text-gray-700 text-[10px] px-2 py-0.5 rounded-full font-sans">0</span>
                 </h2>
-                <div id="peopleContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div id="peopleContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
             </section>
 
-            <section class="mt-8">
-                <h2 class="text-gray-500 text-sm font-bold mb-3 flex items-center gap-2">
-                    الوصولات <span id="receiptsCount" class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">0</span>
+            <section id="section_receipts" class="mt-8">
+                <h2 class="text-gray-500 text-xs font-bold mb-2.5 flex items-center gap-1.5">
+                    <i class="fa-solid fa-receipt text-gray-400"></i> سجل السندات والوصولات <span id="receiptsCount" class="bg-gray-200 text-gray-700 text-[10px] px-2 py-0.5 rounded-full font-sans">0</span>
                 </h2>
-                <div id="receiptsContainer" class="space-y-3"></div>
+                <div id="receiptsContainer" class="space-y-2.5"></div>
             </section>
         </main>
 
-        <!-- الشريط السفلي الثابت (Navigation Bar) -->
-        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-xl z-40 flex justify-around items-center py-2 px-4">
-            <button onclick="scrollToSection('receiptsContainer')" class="flex flex-col items-center gap-1 text-gray-500 hover:text-[#047857] transition focus:outline-none">
+        <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] z-[90] flex justify-around items-center h-16 px-4 safe-bottom">
+            <button onclick="scrollToSection('section_receipts')" class="flex flex-col items-center justify-center flex-1 h-full text-gray-500 hover:text-[#047857] active:scale-95 transition">
                 <i class="fa-solid fa-receipt text-lg"></i>
-                <span class="text-[10px] font-bold">الوصولات</span>
+                <span class="text-[10px] font-bold mt-0.5">الوصولات</span>
             </button>
-            <button onclick="openReceiptModal()" class="flex flex-col items-center justify-center w-12 h-12 bg-[#047857] hover:bg-emerald-700 text-white rounded-full transition shadow-md transform -translate-y-3 border-4 border-white focus:outline-none">
-                <i class="fa-solid fa-plus text-lg"></i>
-            </button>
-            <button onclick="scrollToSection('peopleContainer')" class="flex flex-col items-center gap-1 text-gray-500 hover:text-[#047857] transition focus:outline-none">
+            
+            <div class="relative flex justify-center items-center w-16 h-full">
+                <button onclick="openReceiptModal()" class="absolute -top-5 flex items-center justify-center w-14 h-14 bg-[#047857] text-white rounded-full shadow-lg hover:bg-emerald-700 active:scale-90 transition border-4 border-white">
+                    <i class="fa-solid fa-plus text-xl"></i>
+                </button>
+            </div>
+            
+            <button onclick="scrollToSection('section_people')" class="flex flex-col items-center justify-center flex-1 h-full text-gray-500 hover:text-[#047857] active:scale-95 transition">
                 <i class="fa-solid fa-users text-lg"></i>
-                <span class="text-[10px] font-bold">الأشخاص</span>
+                <span class="text-[10px] font-bold mt-0.5">الأشخاص</span>
             </button>
         </nav>
     </div>
 
     <div id="printCaptureContainer" class="fixed top-[-9999px] left-[-9999px]"></div>
 
-    <!-- النافذة المنبثقة لإضافة شخص -->
-    <div id="personModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
-        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-lg z-50 overflow-y-auto p-6 text-right">
-            <h3 id="personModalTitle" class="text-lg font-bold text-gray-800 mb-4">إضافة شخص</h3>
+    <div id="personModal" class="modal opacity-0 pointer-events-none fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden p-5 text-right transform scale-95 transition-transform duration-200">
+            <h3 id="personModalTitle" class="text-base font-bold text-gray-800 mb-4 pb-2 border-b">إضافة حساب جديد</h3>
             <input type="hidden" id="personId">
             <input type="hidden" id="personRole">
-            <div class="space-y-4">
+            <div class="space-y-3.5">
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">الاسم</label>
-                    <input type="text" id="personName" class="w-full p-2 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                    <label class="block text-xs text-gray-600 mb-1">الاسم الكامل</label>
+                    <input type="text" id="personName" placeholder="اكتب اسم الشخص الثنائي أو الثلاثي..." class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white">
                 </div>
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">رقم الهاتف</label>
-                    <input type="text" id="personPhone" class="w-full p-2 border rounded-xl bg-gray-50 text-sm text-left focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                    <label class="block text-xs text-gray-600 mb-1">رقم الهاتف</label>
+                    <input type="text" id="personPhone" placeholder="07xxxxxxxx" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs text-left focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white">
                 </div>
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">العنوان / المنطقة</label>
-                    <input type="text" id="personAddress" class="w-full p-2 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                    <label class="block text-xs text-gray-600 mb-1">العنوان / المنطقة</label>
+                    <input type="text" id="personAddress" placeholder="مثال: بغداد - الكرادة" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white">
                 </div>
             </div>
-            <div class="mt-6 flex gap-2 justify-start">
-                <button onclick="savePerson()" class="bg-[#047857] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-800 transition">حفظ</button>
-                <button onclick="closeModal('personModal')" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-200 transition">إلغاء</button>
+            <div class="mt-5 flex gap-2 justify-start">
+                <button onclick="savePerson()" class="bg-[#047857] hover:bg-emerald-800 text-white px-5 py-2 rounded-xl text-xs font-semibold transition">حفظ البيانات</button>
+                <button onclick="closeModal('personModal')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-xs font-semibold transition">إلغاء</button>
             </div>
         </div>
     </div>
 
-    <!-- النافذة المنبثقة لإضافة وصل -->
-    <div id="receiptModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
-        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-lg z-50 overflow-y-auto p-6 text-right">
-            <h3 id="receiptModalTitle" class="text-lg font-bold text-gray-800 mb-4">إضافة وصل جديد</h3>
+    <div id="receiptModal" class="modal opacity-0 pointer-events-none fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden p-5 text-right transform scale-95 transition-transform duration-200">
+            <h3 id="receiptModalTitle" class="text-base font-bold text-gray-800 mb-4 pb-2 border-b">إنشاء مستند سداد جديد</h3>
             <input type="hidden" id="receiptId">
-            <div class="space-y-4">
+            <div class="space-y-3.5">
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">نوع الوصل</label>
-                    <select id="receiptType" class="w-full p-2 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]">
-                        <option value="قبض">وصل قبض (+)</option>
-                        <option value="صرف">وصل صرف (-)</option>
+                    <label class="block text-xs text-gray-600 mb-1">نوع الحركة الماليّة</label>
+                    <select id="receiptType" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                        <option value="قبض">وصل قبض (+ إدخال صندوق)</option>
+                        <option value="صرف">وصل صرف (- إخراج صندوق)</option>
                     </select>
                 </div>
                 
                 <div class="relative">
-                    <label class="block text-sm text-gray-600 mb-1">ابحث عن الشخص واجلب اسمه</label>
+                    <label class="block text-xs text-gray-600 mb-1">اختيار الحساب المستهدف</label>
                     <div class="relative">
-                        <input type="text" id="personSearchInput" oninput="filterPersonDropdown()" placeholder="اكتب حرفاً من الاسم للبحث الفوري..." autocomplete="off" class="w-full p-2 pr-8 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                        <input type="text" id="personSearchInput" oninput="filterPersonDropdown()" placeholder="ابحث بالاسم لربطه بالحركة..." autocomplete="off" class="w-full p-2.5 pr-8 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857]">
                         <span class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 pointer-events-none">
-                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            <i class="fa-solid fa-magnifying-glass text-[10px]"></i>
                         </span>
                     </div>
                     <input type="hidden" id="receiptPersonId">
-                    <div id="personDropdownMenu" class="absolute hidden z-50 w-full bg-white border border-gray-200 rounded-xl mt-1 max-h-48 overflow-y-auto shadow-xl"></div>
+                    <div id="personDropdownMenu" class="absolute hidden z-[120] w-full bg-white border border-gray-200 rounded-xl mt-1 max-h-40 overflow-y-auto shadow-2xl"></div>
                 </div>
 
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">المبلغ (د.ع)</label>
-                    <input type="number" id="receiptAmount" class="w-full p-2 border rounded-xl bg-gray-50 text-sm text-left font-bold focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                    <label class="block text-xs text-gray-600 mb-1">المبلغ الإجمالي (د.ع)</label>
+                    <input type="number" id="receiptAmount" placeholder="0" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs text-left font-bold focus:outline-none focus:ring-2 focus:ring-[#047857] font-sans">
                 </div>
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">البيان / التفاصيل</label>
-                    <input type="text" id="receiptDetails" class="w-full p-2 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                    <label class="block text-xs text-gray-600 mb-1">تفاصيل البيان والسبب</label>
+                    <input type="text" id="receiptDetails" placeholder="مثال: تسديد دفعة من الحساب، شراء مواد..." class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857]">
                 </div>
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">التاريخ</label>
-                    <input type="date" id="receiptDate" class="w-full p-2 border rounded-xl bg-gray-50 text-sm text-left focus:outline-none focus:ring-2 focus:ring-[#047857]">
+                    <label class="block text-xs text-gray-600 mb-1">تاريخ تحرير السند</label>
+                    <input type="date" id="receiptDate" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs text-left focus:outline-none focus:ring-2 focus:ring-[#047857] font-sans">
                 </div>
             </div>
-            <div class="mt-6 flex gap-2 justify-start">
-                <button onclick="saveReceipt()" class="bg-[#0284c7] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#0369a1] transition">حفظ الوصل</button>
-                <button onclick="closeModal('receiptModal')" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-200 transition">إلغاء</button>
+            <div class="mt-5 flex gap-2 justify-start">
+                <button onclick="saveReceipt()" class="bg-[#0284c7] hover:bg-[#0369a1] text-white px-5 py-2 rounded-xl text-xs font-semibold transition">حفظ وتثبيت السند</button>
+                <button onclick="closeModal('receiptModal')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-xs font-semibold transition">إلغاء</button>
             </div>
         </div>
     </div>
 
     <script>
-        // إعدادات البيئة لـ Firebase الخاصة بك المدمجة حديثاً
+        // إعدادات البيئة السحابية لـ Firebase الخاصة بك
         const firebaseConfig = {
             apiKey: "AIzaSyCDiVLuKgKBqs0ZdxtLhQjcAdAN3rFF3Ok",
             authDomain: "account-book-3978f.firebaseapp.com",
@@ -307,13 +298,17 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // تمكين الحفظ المحلي المؤقت للبيانات لضمان عدم ضياعها في حالة انقطاع الإنترنت المفاجئ
+        db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
+        db.enablePersistence().catch(err => console.log("الدعم المحلي غير مفعل حالياً:", err.code));
+
         let people = [];
         let receipts = [];
         let currentUser = null;
         let isSignUpMode = true;
         let deferredPrompt;
 
-        // مراقبة الجلسة وحالة تسجيل دخول المستخدم بشكل حي وسحابي
+        // مراقبة الجلسة وحالة تسجيل دخول المستخدم بشكل مستقر ومستمر
         auth.onAuthStateChanged(user => {
             const authContainer = document.getElementById('authContainer');
             const appContent = document.getElementById('appContent');
@@ -330,7 +325,7 @@
             }
         });
 
-        // مزامنة حية سحابية للبيانات مقسمة حسب المعرّف الفريد لكل حساب مستخدم بشكل مستقل وآمن
+        // مزامنة حية وفورية سحابية للبيانات لكل حساب بشكل مستقل ومحمي تماماً
         function setupRealtimeSync() {
             if(!currentUser) return;
 
@@ -341,7 +336,7 @@
                     people.push({ id: doc.id, ...doc.data() });
                 });
                 renderAll();
-            }, err => console.error("خطأ مزامنة الأشخاص:", err));
+            }, err => console.error("خطأ مزامنة الأشخاص السحابية:", err));
 
             db.collection("users").doc(currentUser.uid).collection("receipts")
             .onSnapshot((snapshot) => {
@@ -350,14 +345,14 @@
                     receipts.push({ id: doc.id, ...doc.data() });
                 });
                 renderAll();
-            }, err => console.error("خطأ مزامنة الوصولات:", err));
+            }, err => console.error("خطأ مزامنة الوصولات السحابية:", err));
         }
 
-        // دالة التنقل السلس عبر عناصر الشريط السفلي
+        // دالة التنقل السلس والذكي
         function scrollToSection(id) {
             const element = document.getElementById(id);
             if(element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
@@ -370,22 +365,22 @@
 
             if(isSignUpMode) {
                 auth.createUserWithEmailAndPassword(email, password)
-                .catch(err => alert('خطأ في إنشاء الحساب: ' + err.message));
+                .catch(err => alert('خطأ في إنشاء الحساب الجديد: ' + err.message));
             } else {
                 auth.signInWithEmailAndPassword(email, password)
-                .catch(err => alert('خطأ في الدخول: تأكد من البيانات المرسلة وعملية تفعيل المزود. ' + err.message));
+                .catch(err => alert('خطأ في تسجيل الدخول: ' + err.message));
             }
         }
 
-        // الدخول السريع عبر Google Accounts
+        // الدخول عبر حسابات جوجل
         function handleGoogleAuth() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
-            .catch(err => alert('خطأ في تسجيل دخول جوجل: ' + err.message));
+            .catch(err => alert('خطأ في الربط عبر جوجل: ' + err.message));
         }
 
         function handleLogout() {
-            if(confirm('هل تريد تسجيل الخروج؟')) {
+            if(confirm('هل تريد تأكيد تسجيل الخروج من هذا الحساب السحابي؟')) {
                 auth.signOut();
             }
         }
@@ -398,9 +393,7 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                .then(() => console.log('تم تسجيل Service Worker بنجاح'))
-                .catch(err => console.log('فشل تسجيل الـ Service Worker:', err));
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration issue:', err));
             });
         }
 
@@ -412,10 +405,7 @@
         });
 
         function triggerPwaInstall() {
-            if (!deferredPrompt) {
-                alert('لتثبيت التطبيق على جهازك:\n- على الأندرويد: اضغط على النقاط الثلاث ثم اختر "إضافة إلى الشاشة الرئيسية".\n- على الآيفون: اضغط على زر المشاركة في متصفح Safari ثم اختر "إضافة إلى الشاشة الرئيسية".');
-                return;
-            }
+            if (!deferredPrompt) return;
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then(() => {
                 deferredPrompt = null;
@@ -431,6 +421,8 @@
             const modal = document.getElementById(modalId);
             modal.classList.add('pointer-events-none', 'opacity-0');
             modal.classList.remove('opacity-100');
+            const innerContainer = modal.querySelector('div');
+            if (innerContainer) innerContainer.classList.add('scale-95');
             document.body.classList.remove('modal-active');
             if(modalId === 'receiptModal') document.getElementById('personDropdownMenu').classList.add('hidden');
         }
@@ -439,6 +431,8 @@
             const modal = document.getElementById(modalId);
             modal.classList.remove('pointer-events-none', 'opacity-0');
             modal.classList.add('opacity-100');
+            const innerContainer = modal.querySelector('div');
+            if (innerContainer) innerContainer.classList.remove('scale-95');
             document.body.classList.add('modal-active');
         }
 
@@ -468,31 +462,35 @@
             const address = document.getElementById('personAddress').value.trim();
             const role = document.getElementById('personRole').value;
 
-            if(!name) return alert('الرجاء كتابة الإسم أولاً');
+            if(!name) return alert('الرجاء كتابة اسم الشخص أولاً');
 
             const personData = { name, phone, address, role };
             const ref = db.collection("users").doc(currentUser.uid).collection("people");
 
             if(id) {
-                ref.doc(id).update(personData).then(() => closeModal('personModal'));
+                ref.doc(id).update(personData).then(() => {
+                    closeModal('personModal');
+                }).catch(err => alert("خطأ أثناء التعديل: " + err.message));
             } else {
-                ref.doc(String(Date.now())).set(personData).then(() => closeModal('personModal'));
+                ref.doc(String(Date.now())).set(personData).then(() => {
+                    closeModal('personModal');
+                }).catch(err => alert("خطأ أثناء الحفظ السحابي: " + err.message));
             }
         }
 
         function deletePerson(id) {
-            if(confirm('هل أنت متأكد من حذف هذا الشخص؟ سيؤدي ذلك لحذف عملياته أيضاً.')) {
+            if(confirm('هل أنت متأكد من حذف هذا الحساب بالكامل؟ سيتم مسح كافة الديون والوصولات المرتبطة به.')) {
                 const batch = db.batch();
                 const userRef = db.collection("users").doc(currentUser.uid);
                 
                 batch.delete(userRef.collection("people").doc(id));
                 receipts.forEach(r => {
-                    if(r.personId === id || String(r.personId) === id) {
+                    if(String(r.personId) === id) {
                         batch.delete(userRef.collection("receipts").doc(r.id));
                     }
                 });
                 
-                batch.commit();
+                batch.commit().catch(err => alert("حدث خطأ أثناء الحذف: " + err.message));
             }
         }
 
@@ -502,7 +500,7 @@
             const dropdown = document.getElementById('personDropdownMenu');
             
             if (people.length === 0) {
-                dropdown.innerHTML = `<div class="p-3 text-sm text-gray-400 text-center">لا يوجد أشخاص مسجلين</div>`;
+                dropdown.innerHTML = `<div class="p-3 text-xs text-gray-400 text-center">لا توجد حسابات مسجلة بعد</div>`;
                 dropdown.classList.remove('hidden');
                 return;
             }
@@ -510,12 +508,12 @@
             const matches = people.filter(p => p.name.toLowerCase().includes(filter));
 
             if(matches.length === 0) {
-                dropdown.innerHTML = `<div class="p-3 text-sm text-gray-400 text-center">لم يتم العثور على نتائج للبحث</div>`;
+                dropdown.innerHTML = `<div class="p-3 text-xs text-gray-400 text-center">لا توجد نتائج مطابقة للبحث</div>`;
             } else {
                 dropdown.innerHTML = matches.map(p => `
-                    <div onclick="selectPersonForReceipt('${p.id}', '${p.name}')" class="p-2.5 hover:bg-gray-50 text-sm text-gray-700 cursor-pointer border-b border-gray-100 last:border-none flex justify-between items-center transition">
+                    <div onclick="selectPersonForReceipt('${p.id}', '${p.name}')" class="p-2.5 hover:bg-gray-50 text-xs text-gray-700 cursor-pointer border-b border-gray-100 last:border-none flex justify-between items-center transition">
                         <span class="font-semibold">${p.name}</span>
-                        <span class="text-xs ${p.role === 'customer' ? 'bg-cyan-50 text-cyan-600' : 'bg-purple-50 text-purple-600'} px-1.5 py-0.5 rounded">${p.role === 'customer' ? 'زبون' : 'مجهز'}</span>
+                        <span class="text-[10px] ${p.role === 'customer' ? 'bg-cyan-50 text-cyan-600' : 'bg-purple-50 text-purple-600'} px-1.5 py-0.5 rounded">${p.role === 'customer' ? 'زبون' : 'مجهز'}</span>
                     </div>
                 `).join('');
             }
@@ -538,22 +536,22 @@
 
         function openReceiptModal(id = null) {
             if(people.length === 0) {
-                alert('الرجاء إضافة زبون أو مجهز واحد على الأقل قبل عمل وصل!');
+                alert('الرجاء تسجيل زبون أو مجهز واحد على الأقل في النظام لتتمكن من إنشاء السندات لهم!');
                 return;
             }
 
             if(id) {
                 const receipt = receipts.find(r => r.id === id);
-                const person = people.find(p => p.id === String(receipt.personId) || p.id === receipt.personId);
+                const person = people.find(p => p.id === String(receipt.personId));
                 
                 document.getElementById('receiptId').value = receipt.id;
                 document.getElementById('receiptType').value = receipt.type;
                 document.getElementById('receiptPersonId').value = receipt.personId;
-                document.getElementById('personSearchInput').value = person ? person.name : 'شخص محذوف';
+                document.getElementById('personSearchInput').value = person ? person.name : 'حساب غير معرف أو محذوف';
                 document.getElementById('receiptAmount').value = receipt.amount;
                 document.getElementById('receiptDetails').value = receipt.details;
                 document.getElementById('receiptDate').value = receipt.date;
-                document.getElementById('receiptModalTitle').innerText = 'تعديل بيانات الوصل';
+                document.getElementById('receiptModalTitle').innerText = 'تعديل السند المالي';
             } else {
                 document.getElementById('receiptId').value = '';
                 document.getElementById('receiptType').value = 'قبض';
@@ -562,7 +560,7 @@
                 document.getElementById('receiptAmount').value = '';
                 document.getElementById('receiptDetails').value = '';
                 document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
-                document.getElementById('receiptModalTitle').innerText = 'إضافة وصل جديد';
+                document.getElementById('receiptModalTitle').innerText = 'إنشاء مستند سداد جديد';
             }
             openModal('receiptModal');
         }
@@ -572,36 +570,41 @@
             const type = document.getElementById('receiptType').value;
             const personId = document.getElementById('receiptPersonId').value;
             const amount = Number(document.getElementById('receiptAmount').value);
-            const details = document.getElementById('receiptDetails').value.trim() || 'دفعة';
+            const details = document.getElementById('receiptDetails').value.trim() || 'تسديد مالي';
             const date = document.getElementById('receiptDate').value;
 
-            if(!personId) return alert('الرجاء تحديد واختيار شخص من القائمة المنسدلة أولاً');
-            if(!amount || amount <= 0) return alert('الرجاء إدخال مبلغ صحيح أكبر من صفر');
+            if(!personId) return alert('الرجاء اختيار أحد الحسابات من القائمة المنسدلة لربط الوصل به');
+            if(!amount || amount <= 0) return alert('الرجاء إدخال قيمة مالية صالحة أكبر من صفر');
 
             const ref = db.collection("users").doc(currentUser.uid).collection("receipts");
 
             if(id) {
                 const existing = receipts.find(r => r.id === id);
                 ref.doc(id).update({ type, personId, amount, details, date, docNo: existing.docNo || 1001 })
-                .then(() => closeModal('receiptModal'));
+                .then(() => {
+                    closeModal('receiptModal');
+                }).catch(err => alert("خطأ تحديث السند: " + err.message));
             } else {
                 const lastDocNo = receipts.length > 0 ? Math.max(...receipts.map(r => Number(r.docNo) || 1000)) : 1000;
                 const newDocNo = lastDocNo + 1;
                 ref.doc(String(Date.now())).set({ docNo: newDocNo, type, personId, amount, details, date })
-                .then(() => closeModal('receiptModal'));
+                .then(() => {
+                    closeModal('receiptModal');
+                }).catch(err => alert("خطأ ترحيل السند: " + err.message));
             }
         }
 
         function deleteReceipt(id) {
-            if(confirm('هل أنت متأكد من حذف هذا الوصل نهائياً؟')) {
-                db.collection("users").doc(currentUser.uid).collection("receipts").doc(id).delete();
+            if(confirm('هل أنت متأكد من حذف هذا السند نهائياً من الدفاتر الحسابية؟')) {
+                db.collection("users").doc(currentUser.uid).collection("receipts").doc(id).delete()
+                .catch(err => alert("حدث خطأ أثناء حذف المستند: " + err.message));
             }
         }
 
         function exportInvoiceImage(id) {
             const receipt = receipts.find(r => r.id === id);
-            const person = people.find(p => p.id === String(receipt.personId) || p.id === receipt.personId);
-            const name = person ? person.name : 'شخص محذوف';
+            const person = people.find(p => p.id === String(receipt.personId));
+            const name = person ? person.name : 'حساب محذوف';
             const isKabid = receipt.type === 'قبض';
             const docNo = receipt.docNo || 1000;
             
@@ -698,26 +701,26 @@
                 else balanceText = "متوازن 0 د.ع";
 
                 return `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-start">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-start">
                         <div class="flex gap-1">
-                            <button onclick="deletePerson('${p.id}')" class="w-8 h-8 text-red-500 hover:bg-red-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-trash-can text-sm"></i></button>
-                            <button onclick="openPersonModal('${p.role}', '${p.id}')" class="w-8 h-8 text-gray-500 hover:bg-gray-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-pen-to-square text-sm"></i></button>
+                            <button onclick="deletePerson('${p.id}')" class="w-7 h-7 text-red-500 hover:bg-red-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                            <button onclick="openPersonModal('${p.role}', '${p.id}')" class="w-7 h-7 text-gray-500 hover:bg-gray-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-pen-to-square text-xs"></i></button>
                         </div>
                         <div class="text-right">
-                            <div class="flex items-center gap-2 justify-end mb-1">
-                                <span class="${p.role === 'customer' ? 'bg-cyan-50 text-cyan-600' : 'bg-purple-50 text-purple-600'} text-xs font-semibold px-2 py-0.5 rounded-md">${p.role === 'customer' ? 'زبون' : 'مجهز'}</span>
-                                <h3 class="font-bold text-gray-800 text-base">${p.name}</h3>
+                            <div class="flex items-center gap-1.5 justify-end mb-1">
+                                <span class="${p.role === 'customer' ? 'bg-cyan-50 text-cyan-600' : 'bg-purple-50 text-purple-600'} text-[10px] font-semibold px-1.5 py-0.5 rounded-md">${p.role === 'customer' ? 'زبون' : 'مجهز'}</span>
+                                <h3 class="font-bold text-gray-800 text-sm md:text-base">${p.name}</h3>
                             </div>
-                            <p class="text-xs text-gray-500 flex items-center gap-1 justify-end" style="direction: ltr;">${p.phone || 'بلا هاتف'} <i class="fa-solid fa-phone text-[10px]"></i></p>
-                            <p class="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-end">${p.address || 'بلا عنوان'} <i class="fa-solid fa-location-dot text-[10px]"></i></p>
-                            <p class="text-xs font-bold ${pBalance >= 0 ? 'text-emerald-600' : 'text-red-600'} mt-3">الرصيد: ${balanceText}</p>
+                            <p class="text-[11px] text-gray-500 flex items-center gap-1 justify-end" style="direction: ltr;">${p.phone || 'بلا هاتف'} <i class="fa-solid fa-phone text-[9px]"></i></p>
+                            <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1 justify-end">${p.address || 'بلا عنوان'} <i class="fa-solid fa-location-dot text-[9px]"></i></p>
+                            <p class="text-xs font-bold ${pBalance >= 0 ? 'text-emerald-600' : 'text-red-600'} mt-2">الرصيد: ${balanceText}</p>
                         </div>
                     </div>
                 `;
             }).join('');
 
             const filteredReceipts = receipts.filter(r => {
-                const person = people.find(p => p.id === String(r.personId) || p.id === r.personId);
+                const person = people.find(p => p.id === String(r.personId));
                 const pName = person ? person.name.toLowerCase() : '';
                 const matchesSearch = pName.includes(searchVal) || String(r.docNo).includes(searchVal) || r.details.toLowerCase().includes(searchVal);
                 const matchesType = filterType === 'all' || r.type === filterType;
@@ -728,32 +731,32 @@
             const receiptsContainer = document.getElementById('receiptsContainer');
             
             receiptsContainer.innerHTML = filteredReceipts.map(r => {
-                const person = people.find(p => p.id === String(r.personId) || p.id === r.personId);
-                const name = person ? person.name : 'شخص محذوف';
+                const person = people.find(p => p.id === String(r.personId));
+                const name = person ? person.name : 'حساب محذوف';
                 const isKabid = r.type === 'قبض';
                 const currentDocNo = r.docNo || 1000;
 
                 return `
-                    <div id="receipt-card-${r.id}" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 transition hover:bg-gray-50/50">
-                        <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
-                            <span class="text-xl font-bold ${isKabid ? 'text-emerald-600' : 'text-pink-600'} font-sans">${isKabid ? '+' : '-'} ${formatMoney(r.amount)}</span>
+                    <div id="receipt-card-${r.id}" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3 transition hover:bg-gray-50/50">
+                        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                            <span class="text-base md:text-xl font-bold ${isKabid ? 'text-emerald-600' : 'text-pink-600'} font-sans">${isKabid ? '+' : '-'} ${formatMoney(r.amount)}</span>
                             <div class="action-buttons flex gap-1">
-                                <button onclick="deleteReceipt('${r.id}')" class="w-8 h-8 text-red-500 hover:bg-red-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-trash-can text-xs"></i></button>
-                                <button onclick="openReceiptModal('${r.id}')" class="w-8 h-8 text-gray-500 hover:bg-gray-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-pen-to-square text-xs"></i></button>
-                                <button onclick="exportInvoiceImage('${r.id}')" class="w-8 h-8 text-[#0284c7] hover:bg-sky-50 rounded-lg flex items-center justify-center transition border border-gray-100" title="تحميل كصورة JPG"><i class="fa-solid fa-download text-xs"></i></button>
+                                <button onclick="deleteReceipt('${r.id}')" class="w-7 h-7 text-red-500 hover:bg-red-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                                <button onclick="openReceiptModal('${r.id}')" class="w-7 h-7 text-gray-500 hover:bg-gray-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-pen-to-square text-xs"></i></button>
+                                <button onclick="exportInvoiceImage('${r.id}')" class="w-7 h-7 text-[#0284c7] hover:bg-sky-50 rounded-lg flex items-center justify-center transition border border-gray-100" title="تحميل كصورة"><i class="fa-solid fa-download text-xs"></i></button>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                        <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                             <div class="text-right">
-                                <div class="flex items-center gap-2 justify-end">
-                                    <span class="text-xs text-gray-400 font-mono">#${currentDocNo}</span>
-                                    <span class="text-xs ${isKabid ? 'bg-emerald-50 text-emerald-600' : 'bg-pink-50 text-pink-600'} px-2 py-0.5 rounded font-semibold">وصل ${r.type}</span>
-                                    <h4 class="font-bold text-gray-800 text-base">${name}</h4>
+                                <div class="flex items-center gap-1.5 justify-end">
+                                    <span class="text-[10px] text-gray-400 font-mono">#${currentDocNo}</span>
+                                    <span class="text-[10px] ${isKabid ? 'bg-emerald-50 text-emerald-600' : 'bg-pink-50 text-pink-600'} px-1.5 py-0.5 rounded font-semibold">وصل ${r.type}</span>
+                                    <h4 class="font-bold text-gray-800 text-sm md:text-base">${name}</h4>
                                 </div>
-                                <p class="text-xs text-gray-400 mt-1">${r.date.replace(/-/g, '/')} – البيان: ${r.details}</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5 font-sans">${r.date.replace(/-/g, '/')} – البيان: ${r.details}</p>
                             </div>
-                            <div class="w-11 h-11 ${isKabid ? 'bg-emerald-50 text-emerald-600' : 'bg-pink-50 text-pink-600'} rounded-full flex items-center justify-center text-xl">
-                                <i class="fa-solid ${isKabid ? 'fa-circle-arrow-down' : 'fa-circle-arrow-up'}" style="margin-top: 2px;"></i>
+                            <div class="w-9 h-9 ${isKabid ? 'bg-emerald-50 text-emerald-600' : 'bg-pink-50 text-pink-600'} rounded-full flex items-center justify-center text-lg flex-shrink-0">
+                                <i class="fa-solid ${isKabid ? 'fa-circle-arrow-down' : 'fa-circle-arrow-up'}"></i>
                             </div>
                         </div>
                     </div>
