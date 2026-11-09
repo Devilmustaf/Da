@@ -1,824 +1,948 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>دفتر القبض والصرف الاحترافي</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق القبض والصرف الاحترافي - نظام التبويبات والبحث المطور</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="#047857">
-    <meta name="apple-mobile-web-app-title" content="دفتر الحسابات">
-    <meta name="theme-color" content="#047857">
+    <meta name="apple-mobile-web-app-title" content="المحفظة">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#030804">
+    <meta name="mobile-web-app-capable" content="yes">
 
-    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluent/512/wallet.png">
+    <link rel="icon" type="image/png" href="https://img.icons8.com/fluent/512/wallet.png">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- استدعاء سكريبتات الفايربيس المستقرة والمتوافقة مع الكود القديم والجديد -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
-        .modal-active { overflow: hidden; }
-        .bottom-nav-space { padding-bottom: 100px; }
-        
-        .invoice-print-template {
-            display: none;
-            width: 480px;
-            background: #ffffff;
-            padding: 30px;
-            border: 2px dashed #94a3b8;
-            border-radius: 1rem;
-            font-family: 'Cairo', sans-serif;
-            box-sizing: border-box;
+        :root {
+            --primary: #00ff66; /* أخضر ماتركس نيون مضيء */
+            --primary-hover: #00d957;
+            --primary-glow: rgba(0, 255, 102, 0.35);
+            --success: #00e676;
+            --danger: #ff3366;
+            --background: #030804; /* أسود داكن عميق بنغمة ماتركس */
+            --surface: #09120a;
+            --surface-card: #0e1a10;
+            --border: #17331b;
+            --text: #f0fff4;
+            --text-muted: #76997d;
         }
-        /* إخفاء السكرول بار الافتراضي لتجربة مستخدم أفضل */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            padding: 20px 10px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .install-prompt {
+            display: none; 
+            background: var(--surface);
+            color: var(--text);
+            padding: 14px 15px;
+            position: fixed;
+            top: 20px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 420px;
+            border-radius: 14px;
+            box-shadow: 0 10px 25px rgba(0,255,102,0.15);
+            z-index: 99999;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            line-height: 1.6;
+            border: 1px solid var(--primary);
+        }
+
+        .btn-close-prompt {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 30px 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(0,255,102,0.05);
+            border: 1px solid var(--border);
+            margin-top: 40px;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .auth-header h2 { color: var(--primary); font-size: 22px; margin-bottom: 5px; font-weight: 700; text-shadow: 0 0 10px var(--primary-glow); }
+        .auth-header p { color: var(--text-muted); font-size: 13px; }
+
+        .btn-google {
+            width: 100%; padding: 12px; background: var(--surface-card); color: var(--text);
+            border: 1px solid var(--border); border-radius: 8px; font-size: 14px;
+            font-weight: 600; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; gap: 10px; margin-top: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-google:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .auth-divider { text-align: center; margin: 20px 0 10px 0; color: var(--text-muted); font-size: 13px; position: relative; }
+        .auth-divider span { background: var(--surface); padding: 0 12px; position: relative; z-index: 1; }
+        .auth-divider::before { content: ""; position: absolute; top: 50%; left: 0; right: 0; border-top: 1px solid var(--border); z-index: 0; }
+
+        .app-container {
+            width: 100%;
+            max-width: 600px;
+            display: none; 
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+        header h1 { font-size: 20px; color: var(--primary); font-weight: 800; text-shadow: 0 0 8px var(--primary-glow); }
+
+        .user-info { font-size: 12px; color: var(--text-muted); text-align: left; }
+        .header-actions { display: flex; gap: 8px; align-items: center; margin-top: 4px; justify-content: flex-end; }
+        
+        .btn-logout { background: none; border: none; color: var(--danger); font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: underline; }
+        .btn-reset-app { background: rgba(255, 51, 102, 0.15); color: #ff80a0; border: 1px solid #ff3366; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+
+        .balance-card { background: var(--surface); border-radius: 16px; padding: 20px; text-align: center; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,255,102,0.08); }
+        .balance-card span { color: var(--text-muted); font-size: 14px; }
+        .balance-card h2 { font-size: 28px; margin-top: 5px; color: var(--primary); font-weight: 800; text-shadow: 0 0 12px var(--primary-glow); }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stats-box { background: var(--surface); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
+        .stats-box span { color: var(--text-muted); font-size: 12px; }
+        .stats-box p { font-size: 16px; font-weight: 700; margin-top: 4px; }
+        .stats-box.income p { color: var(--success); text-shadow: 0 0 6px rgba(0,230,118,0.3); }
+        .stats-box.expense p { color: var(--danger); text-shadow: 0 0 6px rgba(255,51,102,0.3); }
+
+        .form-section { background: var(--surface); border-radius: 16px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .form-section h3 { font-size: 15px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px; color: var(--primary); font-weight: 700; }
+
+        .radio-group { display: flex; gap: 15px; margin-bottom: 15px; }
+        .radio-label { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; background: var(--surface-card); border: 1px solid var(--border); color: var(--text); border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; }
+        .radio-group input[type="radio"] { display: none; }
+        
+        .radio-group input[type="radio"]:checked + .radio-label.inc { background: rgba(0, 255, 102, 0.15); border-color: var(--primary); color: var(--primary); font-weight: 700; box-shadow: 0 0 10px var(--primary-glow); }
+        .radio-group input[type="radio"]:checked + .radio-label.exp { background: rgba(255, 51, 102, 0.15); border-color: var(--danger); color: #ff668c; font-weight: 700; box-shadow: 0 0 10px rgba(255,51,102,0.25); }
+
+        .input-block { margin-bottom: 15px; }
+        .input-block label { display: block; font-size: 13px; margin-bottom: 5px; font-weight: 600; color: var(--text-muted); }
+        .input-block input, .input-block select { 
+            width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: var(--surface-card); color: var(--text);
+            transition: all 0.2s ease;
+        }
+        .input-block input:focus, .input-block select:focus { 
+            border-color: var(--primary); 
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .search-contact-input {
+            margin-bottom: 6px;
+            padding: 9px 12px !important;
+            font-size: 13px !important;
+            border: 1px solid var(--primary) !important;
+            background: var(--surface-card) !important;
+            color: var(--text) !important;
+        }
+
+        .btn-submit { 
+            width: 100%; padding: 12px; background: var(--primary); color: #030804; border: none; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+        .btn-submit:hover { background: var(--primary-hover); box-shadow: 0 0 20px var(--primary-glow); }
+
+        .ledger-table-container { overflow-x: auto; margin-top: 5px; }
+        .ledger-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: right; color: var(--text); }
+        .ledger-table th, .ledger-table td { padding: 10px; border-bottom: 1px solid var(--border); }
+        .ledger-table th { background: var(--surface-card); color: var(--primary); font-weight: 700; }
+        .badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .badge.client { background: rgba(0, 255, 102, 0.15); color: var(--primary); border: 1px solid rgba(0, 255, 102, 0.3); }
+        .badge.supplier { background: rgba(0, 230, 118, 0.15); color: var(--success); border: 1px solid rgba(0, 230, 118, 0.3); }
+
+        .transaction-list { display: flex; flex-direction: column; gap: 10px; }
+        .transaction-item { background: var(--surface-card); padding: 15px; border-radius: 12px; border-right: 5px solid var(--border); border-top: 1px solid var(--border); border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); box-shadow: 0 2px 10px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 8px; }
+        .transaction-item.income { border-right-color: var(--primary); }
+        .transaction-item.expense { border-right-color: var(--danger); }
+
+        .item-main { display: flex; justify-content: space-between; align-items: flex-start; }
+        .item-details h4 { font-size: 15px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+        .item-details p { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+        .item-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 8px; }
+        
+        .actions { display: flex; gap: 10px; }
+        .btn-action { background: none; border: none; cursor: pointer; font-size: 12px; padding: 2px 4px; }
+        .btn-pdf { color: var(--primary); font-weight: 700; }
+        .btn-edit { color: #ffd700; font-weight: 700; }
+        .btn-delete { color: var(--danger); font-weight: 700; }
+        
+        .filter-badge-active { background: rgba(255, 51, 102, 0.2); color: #ff80a0; padding: 4px 10px; border-radius: 20px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 10px; border: 1px solid rgba(255, 51, 102, 0.4); }
+
+        .nav-tabs { display: flex; gap: 8px; background: var(--surface-card); padding: 6px; border-radius: 12px; margin-top: 5px; border: 1px solid var(--border); }
+        .tab-button { flex: 1; padding: 10px 5px; border: none; border-radius: 8px; font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; color: var(--text-muted); background: transparent; text-align: center; }
+        .tab-button.active { background: var(--surface); color: var(--primary); border: 1px solid var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bottom-nav-space">
+<body>
 
-    <!-- شاشة تسجيل الدخول والإنشاء -->
-    <div id="authContainer" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-[110] p-4">
-        <div class="bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 text-right border border-slate-700">
-            <div class="flex justify-center mb-4">
-                <div class="bg-[#059669] p-4 rounded-2xl text-white text-3xl shadow-lg">
-                    <i class="fa-solid fa-wallet"></i>
-                </div>
-            </div>
-            <h2 class="text-xl font-bold text-white text-center mb-1">دفتر القبض والصرف الذكي</h2>
-            <p class="text-xs text-slate-400 text-center mb-6">بالدينار العراقي - نظام الحسابات السحابي الآمن</p>
-
-            <div id="emailAuthView" class="space-y-4">
-                <div>
-                    <label class="block text-sm text-slate-300 mb-1">البريد الإلكتروني</label>
-                    <input type="email" id="authEmail" placeholder="example@gmail.com" class="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-left text-sm focus:outline-none focus:ring-2 focus:ring-[#059669]">
-                </div>
-                <div>
-                    <label class="block text-sm text-slate-300 mb-1">كلمة المرور</label>
-                    <input type="password" id="authPassword" placeholder="********" class="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-left text-sm focus:outline-none focus:ring-2 focus:ring-[#059669]">
-                </div>
-                
-                <button id="mainAuthBtn" onclick="handleEmailAuth()" class="w-full bg-[#059669] hover:bg-emerald-700 text-white p-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg mt-2">
-                    <i class="fa-solid fa-user-plus"></i> <span id="authBtnText">إنشاء حساب جديد</span>
-                </button>
-
-                <div class="text-center mt-3">
-                    <button onclick="toggleAuthMode()" id="toggleAuthModeBtn" class="text-xs text-emerald-400 hover:underline">لديك حساب بالفعل؟ تسجيل الدخول</button>
-                </div>
-
-                <div class="relative flex py-2 items-center">
-                    <div class="flex-grow border-t border-slate-700"></div>
-                    <span class="flex-shrink mx-4 text-slate-500 text-xs">أو</span>
-                    <div class="flex-grow border-t border-slate-700"></div>
-                </div>
-
-                <button onclick="handleGoogleAuth()" class="w-full bg-[#2563eb] hover:bg-blue-700 text-white p-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg">
-                    <i class="fa-brands fa-google text-base"></i> تسجيل الدخول باستخدام Google
-                </button>
-            </div>
+    <div class="install-prompt" id="install-box">
+        <div id="install-text-msg">جاري فحص معلومات الجهاز...</div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <button class="btn-close-prompt" id="btn-pwa-install" style="display:none; background: var(--success);">تثبيت</button>
+            <button class="btn-close-prompt" onclick="closeInstallPrompt()">إغلاق</button>
         </div>
     </div>
 
-    <!-- محتوى التطبيق الرئيسي -->
-    <div id="appContent" class="transition-opacity duration-300 opacity-0 pointer-events-none hidden">
-        <header class="bg-[#047857] text-white pt-6 pb-24 px-4 md:px-8 rounded-b-[2rem] shadow-lg relative">
-            <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-                
-                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-start">
-                    <div class="flex items-center gap-2 bg-black/10 px-3 py-1.5 rounded-xl border border-white/10">
-                        <div class="w-7 h-7 rounded-full border border-white/20 bg-emerald-800 flex items-center justify-center text-white text-xs">
-                            <i class="fa-solid fa-cloud shadow-sm"></i>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[11px] font-bold leading-none">المزامنة السحابية</p>
-                            <p id="cloudStatus" class="text-[9px] text-emerald-200 mt-0.5">متصل ونشط</p>
-                        </div>
-                    </div>
-
-                    <button onclick="clearAllData()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-md border border-amber-500">
-                        <i class="fa-solid fa-trash-can-arrow-up"></i> تصفير البرنامج
-                    </button>
-
-                    <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-md border border-red-500">
-                        <i class="fa-solid fa-right-from-bracket"></i> خروج
-                    </button>
+    <!-- واجهة تسجيل الدخول -->
+    <div class="auth-container" id="auth-box">
+        <div class="auth-header">
+            <h2 id="auth-title">تسجيل الدخول للمحفظة</h2>
+            <p id="auth-desc">ادخل بياناتك لحفظ وإدارة حساباتك بأمان سحابي</p>
+        </div>
+        
+        <form id="auth-form">
+            <div class="input-block">
+                <label>البريد الإلكتروني</label>
+                <input type="email" id="auth-email" placeholder="example@mail.com" required>
+            </div>
+            <div class="input-block">
+                <label>كلمة السر</label>
+                <input type="password" id="auth-password" placeholder="••••••••" minlength="6" required>
+            </div>
+            
+            <div id="signup-extra-fields" style="display: none; border-top: 1px dashed var(--border); padding-top: 15px; margin-top: 15px;">
+                <div class="input-block">
+                    <label>اسم الشركة / المذخر التجاري</label>
+                    <input type="text" id="auth-company" placeholder="مثال: مذخر دار الدواء">
                 </div>
-                
-                <div class="text-center md:text-right flex items-center gap-3 w-full md:w-auto justify-center md:justify-end">
-                    <div>
-                        <h1 class="text-xl md:text-2xl font-bold">دفتر القبض والصرف</h1>
-                        <p id="userWelcomeTitle" class="text-xs text-emerald-200 mt-0.5">مرحباً بك في نظام الحسابات السحابي</p>
-                    </div>
+                <div class="input-block" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="auth-is-rep" style="width: 18px; height: 18px;">
+                    <label for="auth-is-rep" style="margin-bottom:0;">أعرف عن نفسي كمندوب معتمد</label>
                 </div>
             </div>
 
-            <!-- كروت الرصيد -->
-            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-full max-w-6xl px-4 grid grid-cols-3 gap-2 md:gap-4">
-                <div class="bg-[#059669] text-white p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-center border border-emerald-500 text-center md:text-right">
-                    <div class="w-full">
-                        <p class="text-[10px] md:text-xs text-emerald-100 font-semibold leading-none">إجمالي القبض</p>
-                        <p id="totalReceipts" class="text-xs md:text-xl font-bold mt-1 font-sans">0 د.ع</p>
-                    </div>
-                </div>
+            <button type="submit" class="btn-submit" id="btn-auth-submit" style="margin-top: 10px;">دخول آمن</button>
+        </form>
 
-                <div class="bg-[#db2777] text-white p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-center border border-pink-500 text-center md:text-right">
-                    <div class="w-full">
-                        <p class="text-[10px] md:text-xs text-pink-100 font-semibold leading-none">إجمالي الصرف</p>
-                        <p id="totalExpenses" class="text-xs md:text-xl font-bold mt-1 font-sans">0 د.ع</p>
-                    </div>
-                </div>
+        <div class="auth-divider"><span>أو الدخول السريع</span></div>
+        <button type="button" class="btn-google" id="btn-google-login">
+            <img src="https://img.icons8.com/color/48/google-logo.png" width="20" alt="Google"> دخول عبر حساب Google
+        </button>
 
-                <div class="bg-[#ea580c] text-white p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-center border border-orange-500 text-center md:text-right">
-                    <div class="w-full">
-                        <p class="text-[10px] md:text-xs text-orange-100 font-semibold leading-none">الرصيد النهائي</p>
-                        <p id="finalBalance" class="text-xs md:text-xl font-bold mt-1 font-sans">0 د.ع</p>
-                    </div>
+        <div class="auth-toggle" style="text-align: center; margin-top: 15px; font-size: 13px;">
+            <p id="auth-toggle-text">ليس لديك حساب؟ <span style="color:var(--primary); cursor:pointer; font-weight:700;" onclick="toggleAuthMode()">إنشاء حساب جديد</span></p>
+        </div>
+    </div>
+
+    <!-- واجهة التطبيق الرئيسية -->
+    <div class="app-container" id="app-box">
+        <header>
+            <h1>تطبيق القبض والصرف</h1>
+            <div class="user-info">
+                <span id="user-email-display">جاري جلب البيانات...</span><br>
+                <div class="header-actions">
+                    <button class="btn-reset-app" onclick="resetAppDatabase()">⚠️ تصفير الحسابات</button>
+                    <button class="btn-logout" onclick="logoutUser()">تسجيل خروج</button>
                 </div>
             </div>
         </header>
 
-        <main class="max-w-6xl w-full mx-auto px-4 mt-16 md:mt-20 flex-1 space-y-8">
-            <!-- شريط التحكم والبحث -->
-            <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-3">
-                <div class="grid grid-cols-2 gap-2 w-full md:w-auto flex-1 md:flex-none">
-                    <button onclick="openPersonModal('customer')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-                        <i class="fa-solid fa-user-plus text-gray-400"></i> إضافة زبون
-                    </button>
-                    <button onclick="openPersonModal('supplier')" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-                        <i class="fa-solid fa-truck-ramp-box text-gray-400"></i> إضافة مجهز
-                    </button>
-                </div>
+        <div class="nav-tabs">
+            <button class="tab-button active" id="tab-main" onclick="switchView('main')">الرئيسية والإدخال</button>
+            <button class="tab-button" id="tab-ledger" onclick="switchView('ledger')">كشوفات وأرصدة الحسابات</button>
+            <button class="tab-button" id="tab-archive" onclick="switchView('archive')">أرشيف الوصولات العام</button>
+        </div>
 
-                <div class="flex gap-2 w-full md:w-auto max-w-lg flex-1">
-                    <div class="relative flex-1">
-                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
-                        </span>
-                        <input type="text" id="searchInput" oninput="renderAll()" placeholder="ابحث باسم الشخص، رقم الوصل..." class="w-full pl-4 pr-9 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white transition text-right">
-                    </div>
-                    <select id="filterType" onchange="renderAll()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-2 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#047857]">
-                        <option value="all">الكل</option>
-                        <option value="قبض">قبض</option>
-                        <option value="صرف">صرف</option>
-                    </select>
-                </div>
+        <div id="view-main-container" style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="balance-card">
+                <span>الصندوق الحالي (إجمالي المتبقي)</span>
+                <h2 id="total-balance">0 د.ع</h2>
             </div>
 
-            <!-- قسم الوصولات والحركات -->
-            <section id="section_receipts" class="scroll-mt-6">
-                <h2 class="text-gray-500 text-xs font-bold mb-2.5 flex items-center gap-1.5">
-                    <i class="fa-solid fa-receipt text-gray-400"></i> سجل السندات والوصولات <span id="receiptsCount" class="bg-gray-200 text-gray-700 text-[10px] px-2 py-0.5 rounded-full font-sans">0</span>
-                </h2>
-                <div id="receiptsContainer" class="space-y-2.5"></div>
-            </section>
-
-            <!-- قسم الأشخاص -->
-            <section id="section_people" class="scroll-mt-6">
-                <h2 class="text-gray-500 text-xs font-bold mb-2.5 flex items-center gap-1.5">
-                    <i class="fa-solid fa-users text-gray-400"></i> الحسابات والأشخاص <span id="peopleCount" class="bg-gray-200 text-gray-700 text-[10px] px-2 py-0.5 rounded-full font-sans">0</span>
-                </h2>
-                <div id="peopleContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
-            </section>
-
-            <!-- قسم معلومات الحساب الشخصي للمستخدم -->
-            <section id="section_profile" class="scroll-mt-6 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                <h2 class="text-gray-700 text-sm font-bold mb-4 flex items-center gap-2 border-b pb-2">
-                    <i class="fa-solid fa-id-card text-[#047857]"></i> معلومات مستخدم التطبيق (المندوب)
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">اسم المندوب الكامل</label>
-                        <input type="text" id="userProfileName" placeholder="اكتب اسمك الكامل هنا..." class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">تابع لأي شركة / مذخر</label>
-                        <input type="text" id="userProfileCompany" placeholder="اسم الشركة أو المذخر..." class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">رقم هاتف المندوب</label>
-                        <input type="text" id="userProfilePhone" placeholder="07xxxxxxxx" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs text-left focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">مكان العمل / المحافظة أو المنطقة</label>
-                        <input type="text" id="userProfileLocation" placeholder="مثال: بغداد - الحارثية" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white">
-                    </div>
-                </div>
-                <div class="mt-4 flex justify-end">
-                    <button onclick="saveUserProfile()" class="bg-[#047857] hover:bg-emerald-800 text-white px-6 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                        <i class="fa-solid fa-floppy-disk"></i> حفظ ملف المستخدم
-                    </button>
-                </div>
-            </section>
-        </main>
-
-        <!-- شريط التنقل السفلي المطور -->
-        <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] z-[90] flex justify-around items-center h-16 px-4 safe-bottom">
-            <button onclick="scrollToSection('section_receipts')" class="flex flex-col items-center justify-center flex-1 h-full text-gray-500 hover:text-[#047857] transition">
-                <i class="fa-solid fa-receipt text-lg"></i>
-                <span class="text-[10px] font-bold mt-0.5">الوصولات</span>
-            </button>
-            
-            <button onclick="scrollToSection('section_people')" class="flex flex-col items-center justify-center flex-1 h-full text-gray-500 hover:text-[#047857] transition">
-                <i class="fa-solid fa-users text-lg"></i>
-                <span class="text-[10px] font-bold mt-0.5">الأشخاص</span>
-            </button>
-
-            <div class="relative flex justify-center items-center w-14 h-full">
-                <button onclick="openReceiptModal()" class="absolute -top-4 flex items-center justify-center w-12 h-12 bg-[#047857] text-white rounded-full shadow-lg hover:bg-emerald-700 active:scale-90 transition border-4 border-white">
-                    <i class="fa-solid fa-plus text-lg"></i>
-                </button>
+            <div class="stats-grid">
+                <div class="stats-box income"><span>إجمالي المقبوضات (+)</span><p id="total-income">0 د.ع</p></div>
+                <div class="stats-box expense"><span>إجمالي المصاريف (-)</span><p id="total-expense">0 د.ع</p></div>
             </div>
-            
-            <button onclick="scrollToSection('section_profile')" class="flex flex-col items-center justify-center flex-1 h-full text-gray-500 hover:text-[#047857] transition">
-                <i class="fa-solid fa-id-card text-lg"></i>
-                <span class="text-[10px] font-bold mt-0.5">حسابي</span>
-            </button>
-        </nav>
-    </div>
 
-    <div id="printCaptureContainer" class="fixed top-[-9999px] left-[-9999px]"></div>
-
-    <!-- النافذة المنبثقة لإضافة/تعديل شخص -->
-    <div id="personModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[105]">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden p-5 text-right">
-            <h3 id="personModalTitle" class="text-base font-bold text-gray-800 mb-4 pb-2 border-b">إضافة حساب جديد</h3>
-            <input type="hidden" id="personId">
-            <input type="hidden" id="personRole">
-            <div class="space-y-3.5">
-                <div>
-                    <label class="block text-xs text-gray-600 mb-1">الاسم الكامل</label>
-                    <input type="text" id="personName" placeholder="اكتب اسم الشخص الثنائي أو الثلاثي..." class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-600 mb-1">رقم الهاتف</label>
-                    <input type="text" id="personPhone" placeholder="07xxxxxxxx" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs text-left focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-600 mb-1">العنوان / المنطقة</label>
-                    <input type="text" id="personAddress" placeholder="مثال: بغداد - الكرادة" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857] focus:bg-white">
-                </div>
+            <div class="form-section">
+                <h3>➕ تعريف جهة جديدة (زبون / مجهز)</h3>
+                <form id="contact-form" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+                        <input type="text" id="contact-name" placeholder="اسم الشخص أو المذخر..." style="padding:10px; border-radius:8px; border:1px solid var(--border); font-size:14px; background:var(--surface-card); color:var(--text);" required>
+                        <select id="contact-type" style="padding:10px; border-radius:8px; border:1px solid var(--border); font-size:14px; background:var(--surface-card); color:var(--text);">
+                            <option value="client">زبون</option>
+                            <option value="supplier">مجهز</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-submit" style="padding: 10px; font-size: 13px;">حفظ وتثبيت الجهة</button>
+                </form>
             </div>
-            <div class="mt-5 flex gap-2 justify-start">
-                <button onclick="savePerson()" class="bg-[#047857] hover:bg-emerald-800 text-white px-5 py-2 rounded-xl text-xs font-semibold transition">حفظ البيانات</button>
-                <button onclick="closeModal('personModal')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-xs font-semibold transition">إلغاء</button>
+
+            <div class="form-section">
+                <h3 id="form-title">تسجيل عملية ماليّة جديدة</h3>
+                <form id="tx-form">
+                    <div class="radio-group">
+                        <input type="radio" id="type-income" name="tx-type" value="income" checked>
+                        <label for="type-income" class="radio-label inc">قَبض من جهة (+)</label>
+                        <input type="radio" id="type-expense" name="tx-type" value="expense">
+                        <label for="type-expense" class="radio-label exp">صَرف إلى جهة (-)</label>
+                    </div>
+
+                    <div class="input-block">
+                        <label>اختر الحساب / الجهة المعنية</label>
+                        <input type="text" id="tx-contact-search" class="search-contact-input" placeholder="🔍 اكتب هنا للبحث السريع عن جهة..." oninput="filterContactDropdown()">
+                        <select id="tx-contact-id" required>
+                            <option value="">-- يرجى اختيار جهة مسجلة من القائمة --</option>
+                        </select>
+                    </div>
+
+                    <div class="input-block">
+                        <label>البيان / تفاصيل الوصل</label>
+                        <input type="text" id="tx-desc" placeholder="مثال: تسديد دفعة من الحساب الأسبوعي" required>
+                    </div>
+
+                    <div class="input-block">
+                        <label>المبلغ الصافي (دينار عراقي)</label>
+                        <input type="text" inputmode="numeric" id="tx-amount" placeholder="مثال: 500,000" oninput="formatAmountInput(this)" required>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="btn-tx-submit">حفظ السند سحابياً</button>
+                    <button type="button" class="btn-submit" id="btn-tx-cancel" style="background: #374151; color: #fff; margin-top: 8px; display: none;" onclick="cancelEditMode()">إلغاء التعديل</button>
+                </form>
             </div>
         </div>
-    </div>
 
-    <!-- النافذة المنبثقة لإضافة/تعديل وصل -->
-    <div id="receiptModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[105]">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden p-5 text-right">
-            <h3 id="receiptModalTitle" class="text-base font-bold text-gray-800 mb-4 pb-2 border-b">إنشاء مستند سداد جديد</h3>
-            <input type="hidden" id="receiptId">
-            <div class="space-y-3.5">
-                <div>
-                    <label class="block text-xs text-gray-600 mb-1">نوع الحركة الماليّة</label>
-                    <select id="receiptType" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857]">
-                        <option value="قبض">وصل قبض (+ إدخال صندوق)</option>
-                        <option value="صرف">وصل صرف (- إخراج صندوق)</option>
-                    </select>
-                </div>
+        <div id="view-ledger-container" style="display: none; flex-direction: column; gap: 20px;">
+            <div class="form-section">
+                <h3>📊 كشوفات وأرصدة حسابات الجهات الحالية</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">ابحث عن زبون أو مجهز محدد لمراجعة موقفه المالي التراكمي في الصندوق واستخراج سنداته.</p>
                 
-                <div class="relative">
-                    <label class="block text-xs text-gray-600 mb-1">اختيار الحساب المستهدف</label>
-                    <div class="relative">
-                        <input type="text" id="personSearchInput" onfocus="filterPersonDropdown()" oninput="filterPersonDropdown()" placeholder="اضغط لعرض الأسماء أو اكتب للبحث..." autocomplete="off" class="w-full p-2.5 pr-8 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857]">
-                        <span class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 pointer-events-none">
-                            <i class="fa-solid fa-magnifying-glass text-[10px]"></i>
-                        </span>
-                    </div>
-                    <input type="hidden" id="receiptPersonId">
-                    <div id="personDropdownMenu" class="absolute hidden z-[120] w-full bg-white border border-gray-200 rounded-xl mt-1 max-h-40 overflow-y-auto shadow-2xl"></div>
+                <div class="input-block">
+                    <label>🔍 ابحث باسم الجهة / الحساب التجاري</label>
+                    <input type="text" id="search-contact-ledger" placeholder="اكتب اسم العميل، المذخر، أو الشركة...">
                 </div>
 
-                <div>
-                    <label class="block text-xs text-gray-600 mb-1">المبلغ الإجمالي (د.ع)</label>
-                    <input type="number" id="receiptAmount" placeholder="0" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs text-left font-bold focus:outline-none focus:ring-2 focus:ring-[#047857] font-sans">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-600 mb-1">تفاصيل البيان والسبب</label>
-                    <input type="text" id="receiptDetails" placeholder="مثال: تسديد دفعة من الحساب..." class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-[#047857]">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-600 mb-1">تاريخ تحرير السند</label>
-                    <input type="date" id="receiptDate" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 text-xs text-left focus:outline-none focus:ring-2 focus:ring-[#047857] font-sans">
+                <div class="ledger-table-container">
+                    <table class="ledger-table">
+                        <thead>
+                            <tr>
+                                <th>الجهة / الاسم</th>
+                                <th>النوع</th>
+                                <th>الرصيد الحالي</th>
+                                <th>إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledger-rows">
+                            <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">لم يتم تعريف جهات بعد</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <div class="mt-5 flex gap-2 justify-start">
-                <button onclick="saveReceipt()" class="bg-[#0284c7] hover:bg-[#0369a1] text-white px-5 py-2 rounded-xl text-xs font-semibold transition">حفظ وتثبيت السند</button>
-                <button onclick="closeModal('receiptModal')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-xs font-semibold transition">إلغاء</button>
+        </div>
+
+        <div id="view-archive-container" style="display: none; flex-direction: column; gap: 20px;">
+            <div class="form-section">
+                <h3>📋 سجل ومستودع الوصولات العام</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">ابحث بدقة عبر كتابة رقم الوصل التلقائي أو اسم الشخص/الجهة المعنية بالتسديد.</p>
+                
+                <div id="filter-indicator" style="display:none;"></div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="input-block" style="margin-bottom: 5px;">
+                        <label style="font-size:11px;">🔍 بحث برقم الوصل المستهدف</label>
+                        <input type="text" id="search-receipt" placeholder="اكتب رقم الوصل...">
+                    </div>
+                    <div class="input-block" style="margin-bottom: 5px;">
+                        <label style="font-size:11px;">👤 بحث باسم الجهة / الحساب</label>
+                        <input type="text" id="search-by-name" placeholder="اكتب اسم العميل أو المذخر...">
+                    </div>
+                </div>
+
+                <div class="transaction-list" id="tx-list" style="margin-top: 15px;"></div>
             </div>
         </div>
     </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <script>
+        const TELEGRAM_BOT_TOKEN = "8517548409:AAFIUHaeRYLiiPa0pwlFmABn6sGhnF64D4Y"; 
+        
+        // تم الاعتماد حصراً على الآيدي المطلوب وإزالة أي آيدي آخر
+        const TELEGRAM_CHAT_IDS = [
+            "636630537"
+        ];
+
         const firebaseConfig = {
-            apiKey: "AIzaSyCDiVLuKgKBqs0ZdxtLhQjcAdAN3rFF3Ok",
-            authDomain: "account-book-3978f.firebaseapp.com",
-            projectId: "account-book-3978f",
-            storageBucket: "account-book-3978f.firebasestorage.app",
-            messagingSenderId: "99966087634",
-            appId: "1:99966087634:web:f61581a5a5ae3b2652580b",
-            measurementId: "G-GJLRTBEHSF"
+            apiKey: "AIzaSyAkBFEtRQBub11C7rgbKXqoYses2j7e2Bo",
+            authDomain: "iraqi-wallet-9b533.firebaseapp.com",
+            projectId: "iraqi-wallet-9b533",
+            storageBucket: "iraqi-wallet-9b533.firebasestorage.app",
+            messagingSenderId: "941146659223",
+            appId: "1:941146659223:web:9736bb1d2768dddc144cd2",
+            measurementId: "G-PY46CC9K17"
         };
 
-        // التهيئة بنظام الـ SDK v8 المستقر والمثالي لتجنب مشاكل الوحدات
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const auth = firebase.auth();
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
-        db.enablePersistence().catch(err => console.log("Persistence offline cache status:", err.code));
-
-        let people = [];
-        let receipts = [];
         let currentUser = null;
-        let isSignUpMode = true;
+        let cachedUserProfile = null; 
+        let transactions = [];
+        let contacts = []; 
+        let selectedContactFilter = null; 
+        let isLoginMode = true; 
+        let unsubscribeTx = null; 
+        let unsubscribeContacts = null;
+        let editingTxId = null; 
 
-        auth.onAuthStateChanged(user => {
-            const authContainer = document.getElementById('authContainer');
-            const appContent = document.getElementById('appContent');
-            if (user) {
-                currentUser = user;
-                authContainer.classList.add('hidden');
-                appContent.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-                setupRealtimeSync();
-                loadUserProfile();
+        const authBox = document.getElementById('auth-box');
+        const appBox = document.getElementById('app-box');
+        const authForm = document.getElementById('auth-form');
+        const txForm = document.getElementById('tx-form');
+        const contactForm = document.getElementById('contact-form');
+        const totalBalance = document.getElementById('total-balance');
+        const totalIncome = document.getElementById('total-income');
+        const totalExpense = document.getElementById('total-expense');
+        const txList = document.getElementById('tx-list');
+        const ledgerRows = document.getElementById('ledger-rows');
+        const txContactSelect = document.getElementById('tx-contact-id');
+        const txContactSearch = document.getElementById('tx-contact-search');
+        const signupExtraFields = document.getElementById('signup-extra-fields');
+        const searchReceipt = document.getElementById('search-receipt');
+        const searchByName = document.getElementById('search-by-name');
+        const searchContactLedger = document.getElementById('search-contact-ledger');
+        const btnTxSubmit = document.getElementById('btn-tx-submit');
+        const btnTxCancel = document.getElementById('btn-tx-cancel');
+        const formTitle = document.getElementById('form-title');
+        const btnGoogleLogin = document.getElementById('btn-google-login');
+        const filterIndicator = document.getElementById('filter-indicator');
+
+        function formatAmountInput(input) {
+            let cleanVal = input.value.replace(/[^0-9]/g, '');
+            if (cleanVal) {
+                input.value = Number(cleanVal).toLocaleString('en-US');
             } else {
-                currentUser = null;
-                authContainer.classList.remove('hidden');
-                appContent.classList.add('hidden', 'opacity-0', 'pointer-events-none');
-            }
-        });
-
-        function setupRealtimeSync() {
-            if(!currentUser) return;
-
-            db.collection("users").doc(currentUser.uid).collection("people")
-            .onSnapshot((snapshot) => {
-                people = [];
-                snapshot.forEach((doc) => {
-                    people.push({ id: doc.id, ...doc.data() });
-                });
-                renderAll();
-            }, error => console.error("People snapshot sync error: ", error));
-
-            db.collection("users").doc(currentUser.uid).collection("receipts")
-            .onSnapshot((snapshot) => {
-                receipts = [];
-                snapshot.forEach((doc) => {
-                    receipts.push({ id: doc.id, ...doc.data() });
-                });
-                renderAll();
-            }, error => console.error("Receipts snapshot sync error: ", error));
-        }
-
-        // إصلاح دالة التنقل والتمرير السلس لحسابي وكافة الحقول
-        function scrollToSection(id) {
-            const element = document.getElementById(id);
-            if(element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                input.value = '';
             }
         }
 
-        function handleEmailAuth() {
-            const email = document.getElementById('authEmail').value.trim();
-            const password = document.getElementById('authPassword').value.trim();
-            if(!email || !password) return alert('الرجاء إدخال البريد الإلكتروني وكلمة المرور');
+        function switchView(viewName) {
+            const mainContainer = document.getElementById('view-main-container');
+            const ledgerContainer = document.getElementById('view-ledger-container');
+            const archiveContainer = document.getElementById('view-archive-container');
+            
+            const tabMain = document.getElementById('tab-main');
+            const tabLedger = document.getElementById('tab-ledger');
+            const tabArchive = document.getElementById('tab-archive');
 
-            if(isSignUpMode) {
-                auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
-            } else {
-                auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
-            }
+            mainContainer.style.display = viewName === 'main' ? 'flex' : 'none';
+            ledgerContainer.style.display = viewName === 'ledger' ? 'flex' : 'none';
+            archiveContainer.style.display = viewName === 'archive' ? 'flex' : 'none';
+
+            tabMain.classList.toggle('active', viewName === 'main');
+            tabLedger.classList.toggle('active', viewName === 'ledger');
+            tabArchive.classList.toggle('active', viewName === 'archive');
         }
 
-        function handleGoogleAuth() {
+        btnGoogleLogin.addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(err => alert(err.message));
-        }
-
-        function handleLogout() {
-            if(confirm('هل تريد تسجيل الخروج؟')) auth.signOut();
-        }
+            auth.signInWithPopup(provider).catch(err => {
+                if (err.code === 'auth/popup-blocked') auth.signInWithRedirect(provider);
+                else alert("خطأ جوجل: " + err.message);
+            });
+        });
 
         function toggleAuthMode() {
-            isSignUpMode = !isSignUpMode;
-            document.getElementById('authBtnText').innerText = isSignUpMode ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
-            document.getElementById('toggleAuthModeBtn').innerText = isSignUpMode ? 'لديك حساب بالفعل؟ تسجيل الدخول' : 'ليس لديك حساب؟ إنشاء حساب جديد';
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').textContent = isLoginMode ? "تسجيل الدخول للمحفظة" : "إنشاء حساب مالي جديد";
+            document.getElementById('btn-auth-submit').textContent = isLoginMode ? "دخول آمن" : "تسجيل الحساب";
+            signupExtraFields.style.display = isLoginMode ? 'none' : 'block';
         }
 
-        function formatMoney(amount) {
-            return Number(amount).toLocaleString('en-US') + " د.ع";
-        }
-
-        // دالة موثوقة لإغلاق النوافذ المنبثقة فوراً
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.add('hidden');
-                document.body.classList.remove('modal-active');
-            }
-            if(modalId === 'receiptModal') {
-                const menu = document.getElementById('personDropdownMenu');
-                if(menu) menu.classList.add('hidden');
-            }
-        }
-
-        function openModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('hidden');
-                document.body.classList.add('modal-active');
-            }
-        }
-
-        function openPersonModal(role, id = null) {
-            document.getElementById('personRole').value = role;
-            if(id) {
-                const person = people.find(p => p.id === id);
-                document.getElementById('personId').value = person.id;
-                document.getElementById('personName').value = person.name;
-                document.getElementById('personPhone').value = person.phone;
-                document.getElementById('personAddress').value = person.address;
-                document.getElementById('personModalTitle').innerText = role === 'customer' ? 'تعديل بيانات الزبون' : 'تعديل بيانات المجهز';
+        authForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            if (isLoginMode) {
+                auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
             } else {
-                document.getElementById('personId').value = '';
-                document.getElementById('personName').value = '';
-                document.getElementById('personPhone').value = '';
-                document.getElementById('personAddress').value = '';
-                document.getElementById('personModalTitle').innerText = role === 'customer' ? 'إضافة زبون جديد' : 'إضافة مجهز جديد';
-            }
-            openModal('personModal');
-        }
-
-        // إصلاح دالة الحفظ مع ضمان الإغلاق الفوري للشاشة المنبثقة
-        function savePerson() {
-            const id = document.getElementById('personId').value;
-            const name = document.getElementById('personName').value.trim();
-            const phone = document.getElementById('personPhone').value.trim();
-            const address = document.getElementById('personAddress').value.trim();
-            const role = document.getElementById('personRole').value;
-
-            if(!name) return alert('الرجاء كتابة اسم الشخص أولاً');
-            const personData = { name, phone, address, role };
-            const ref = db.collection("users").doc(currentUser.uid).collection("people");
-
-            if(id) {
-                ref.doc(id).update(personData)
-                .then(() => { closeModal('personModal'); })
-                .catch(err => alert("حدث خطأ أثناء التحديث السحابي: " + err.message));
-            } else {
-                ref.doc(String(Date.now())).set(personData)
-                .then(() => { closeModal('personModal'); })
-                .catch(err => alert("حدث خطأ أثناء الحفظ السحابي: " + err.message));
-            }
-        }
-
-        function deletePerson(id) {
-            if(confirm('هل أنت متأكد من حذف هذا الحساب؟')) {
-                const batch = db.batch();
-                const userRef = db.collection("users").doc(currentUser.uid);
-                batch.delete(userRef.collection("people").doc(id));
-                receipts.forEach(r => {
-                    if(String(r.personId) === id) batch.delete(userRef.collection("receipts").doc(r.id));
-                });
-                batch.commit().catch(err => console.error("Delete batch error:", err));
-            }
-        }
-
-        function filterPersonDropdown() {
-            const input = document.getElementById('personSearchInput');
-            const filter = input.value.trim().toLowerCase();
-            const dropdown = document.getElementById('personDropdownMenu');
-            
-            if (people.length === 0) {
-                dropdown.innerHTML = `<div class="p-3 text-xs text-gray-400 text-center">لا توجد حسابات مسجلة بعد</div>`;
-                dropdown.classList.remove('hidden');
-                return;
-            }
-
-            const matches = people.filter(p => p.name.toLowerCase().includes(filter));
-
-            if(matches.length === 0) {
-                dropdown.innerHTML = `<div class="p-3 text-xs text-gray-400 text-center">لا توجد نتائج مطابقة</div>`;
-            } else {
-                dropdown.innerHTML = matches.map(p => `
-                    <div onclick="selectPersonForReceipt('${p.id}', '${p.name}')" class="p-2.5 hover:bg-gray-50 text-xs text-gray-700 cursor-pointer border-b border-gray-100 last:border-none flex justify-between items-center transition">
-                        <span class="font-semibold">${p.name}</span>
-                        <span class="text-[10px] ${p.role === 'customer' ? 'bg-cyan-50 text-cyan-600' : 'bg-purple-50 text-purple-600'} px-1.5 py-0.5 rounded">${p.role === 'customer' ? 'زبون' : 'مجهز'}</span>
-                    </div>
-                `).join('');
-            }
-            dropdown.classList.remove('hidden');
-        }
-
-        function selectPersonForReceipt(id, name) {
-            document.getElementById('receiptPersonId').value = id;
-            document.getElementById('personSearchInput').value = name;
-            document.getElementById('personDropdownMenu').classList.add('hidden');
-        }
-
-        document.addEventListener('click', function(e) {
-            const container = document.getElementById('personSearchInput');
-            const dropdown = document.getElementById('personDropdownMenu');
-            if (container && !container.contains(e.target) && dropdown && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
+                const company = document.getElementById('auth-company').value.trim();
+                const isRep = document.getElementById('auth-is-rep').checked;
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then(cred => db.collection('users').doc(cred.user.uid).set({ company, isRep, email }))
+                    .catch(err => alert(err.message));
             }
         });
 
-        function openReceiptModal(id = null) {
-            if(people.length === 0) {
-                alert('الرجاء تسجيل زبون أو مجهز واحد على الأقل أولاً!');
+        function logoutUser() {
+            if(confirm('هل تريد تسجيل الخروج؟')) {
+                if (unsubscribeTx) unsubscribeTx();
+                if (unsubscribeContacts) unsubscribeContacts();
+                auth.signOut();
+            }
+        }
+
+        // دالة تصفير المبالغ والوصولات فقط مع الحفاظ على الأسماء والجهات المخزنة مسبقاً
+        async function resetAppDatabase() {
+            if (!currentUser) return;
+            const confirm1 = confirm("⚠️ تنبيه!\n\nهل أنت متأكد من رغبتك في تصفير المبالغ فقط؟\nسيتم مسح جميع وصولات القبض والصرف وتصفير الحسابات نهائياً مع الحفاظ الكامل على أسماء ورصيد الجهات المسجلة!");
+            if (!confirm1) return;
+
+            const verifyText = prompt("لإتمام عملية تصفير المبالغ والوصولات، يرجى كتابة كلمة (تصفير) في الصندوق أدناه:");
+            if (verifyText !== "تصفير") {
+                alert("تم إلغاء التصفير. الكلمة المدخلة غير مطابقة.");
                 return;
             }
 
-            if(id) {
-                const receipt = receipts.find(r => r.id === id);
-                const person = people.find(p => p.id === String(receipt.personId));
-                
-                document.getElementById('receiptId').value = receipt.id;
-                document.getElementById('receiptType').value = receipt.type;
-                document.getElementById('receiptPersonId').value = receipt.personId;
-                document.getElementById('personSearchInput').value = person ? person.name : 'حساب محذوف';
-                document.getElementById('receiptAmount').value = receipt.amount;
-                document.getElementById('receiptDetails').value = receipt.details;
-                document.getElementById('receiptDate').value = receipt.date;
-                document.getElementById('receiptModalTitle').innerText = 'تعديل السند المالي';
-            } else {
-                document.getElementById('receiptId').value = '';
-                document.getElementById('receiptType').value = 'قبض';
-                document.getElementById('receiptPersonId').value = '';
-                document.getElementById('personSearchInput').value = '';
-                document.getElementById('receiptAmount').value = '';
-                document.getElementById('receiptDetails').value = '';
-                document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
-                document.getElementById('receiptModalTitle').innerText = 'إنشاء مستند جديد';
-            }
-            openModal('receiptModal');
-        }
+            try {
+                const txDocs = await db.collection('transactions').where('userId', '==', currentUser.uid).get();
+                const batch = db.batch();
+                txDocs.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
 
-        function saveReceipt() {
-            const id = document.getElementById('receiptId').value;
-            const type = document.getElementById('receiptType').value;
-            const personId = document.getElementById('receiptPersonId').value;
-            const amount = Number(document.getElementById('receiptAmount').value);
-            const details = document.getElementById('receiptDetails').value.trim() || 'تسديد مالي';
-            const date = document.getElementById('receiptDate').value;
-
-            if(!personId) return alert('الرجاء اختيار اسم الشخص من القائمة');
-            if(!amount || amount <= 0) return alert('الرجاء إدخال مبلغ صحيح أكبر من صفر');
-
-            const ref = db.collection("users").doc(currentUser.uid).collection("receipts");
-
-            if(id) {
-                const existing = receipts.find(r => r.id === id);
-                ref.doc(id).update({ type, personId, amount, details, date, docNo: existing.docNo || 1001 })
-                .then(() => closeModal('receiptModal'))
-                .catch(err => alert(err.message));
-            } else {
-                const lastDocNo = receipts.length > 0 ? Math.max(...receipts.map(r => Number(r.docNo) || 1000)) : 1000;
-                const newDocNo = lastDocNo + 1;
-                ref.doc(String(Date.now())).set({ docNo: newDocNo, type, personId, amount, details, date })
-                .then(() => closeModal('receiptModal'))
-                .catch(err => alert(err.message));
+                alert("✅ تم تصفير جميع المبالغ والوصولات بنجاح، مع الحفاظ على الأسماء والجهات المسجلة.");
+            } catch (err) {
+                alert("حدث خطأ أثناء عملية تصفير المبالغ: " + err.message);
             }
         }
 
-        function deleteReceipt(id) {
-            if(confirm('هل أنت متأكد من حذف هذا الوصل؟')) {
-                db.collection("users").doc(currentUser.uid).collection("receipts").doc(id).delete();
-            }
-        }
-
-        function saveUserProfile() {
-            if(!currentUser) return;
-            const name = document.getElementById('userProfileName').value.trim();
-            const company = document.getElementById('userProfileCompany').value.trim();
-            const phone = document.getElementById('userProfilePhone').value.trim();
-            const location = document.getElementById('userProfileLocation').value.trim();
-
-            db.collection("users").doc(currentUser.uid).collection("profile").doc("info").set({
-                name, company, phone, location
-            }).then(() => {
-                alert("تم حفظ وتحديث ملف المستخدم السحابي بنجاح!");
-                if(name) {
-                    document.getElementById('userWelcomeTitle').innerText = `المندوب: ${name} (${company || 'مستقل'})`;
-                }
-            }).catch(err => alert("حدث خطأ أثناء الحفظ: " + err.message));
-        }
-
-        function loadUserProfile() {
-            if(!currentUser) return;
-            db.collection("users").doc(currentUser.uid).collection("profile").doc("info").get().then((doc) => {
-                if(doc.exists) {
-                    const data = doc.data();
-                    document.getElementById('userProfileName').value = data.name || '';
-                    document.getElementById('userProfileCompany').value = data.company || '';
-                    document.getElementById('userProfilePhone').value = data.phone || '';
-                    document.getElementById('userProfileLocation').value = data.location || '';
-                    
-                    if(data.name) {
-                        document.getElementById('userWelcomeTitle').innerText = `المندوب: ${data.name} (${data.company || 'مستقل'})`;
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                db.collection('users').doc(user.uid).get().then(doc => {
+                    let html = `<strong>${user.email}</strong>`;
+                    if (doc.exists) {
+                        cachedUserProfile = doc.data();
+                        if(cachedUserProfile.company) html += `<br><span style="color:var(--primary); font-weight:700;">💼 ${cachedUserProfile.company}</span>`;
                     }
-                }
-            }).catch(err => console.log("Profile read error:", err));
-        }
-
-        function clearAllData() {
-            if (confirm("🚨 تنبيه هام جداً:\nهل أنت متأكد من رغبتك في تصفير البرنامج بالكامل؟ سيتم مسح جميع الأشخاص والزبائن والوصولات المفتوحة نهائياً وبلا رجعة.")) {
-                if (confirm("تأكيد أخير: هل أنت متأكد حقاً؟")) {
-                    const batch = db.batch();
-                    const userRef = db.collection("users").doc(currentUser.uid);
-                    
-                    people.forEach(p => {
-                        batch.delete(userRef.collection("people").doc(p.id));
-                    });
-                    
-                    receipts.forEach(r => {
-                        batch.delete(userRef.collection("receipts").doc(r.id));
-                    });
-
-                    batch.commit().then(() => {
-                        alert("تم تصفير البرنامج بنجاح ومسح كافة البيانات سحابياً.");
-                    }).catch(err => {
-                        alert("حدث خطأ أثناء التصفير: " + err.message);
-                    });
-                }
+                    document.getElementById('user-email-display').innerHTML = html;
+                }).catch(() => {
+                    document.getElementById('user-email-display').innerHTML = `<strong>${user.email}</strong>`;
+                });
+                authBox.style.display = 'none'; appBox.style.display = 'flex';
+                startRealtimeListeners();
+            } else {
+                currentUser = null; authBox.style.display = 'block'; appBox.style.display = 'none';
             }
-        }
+        });
 
-        function exportInvoiceImage(id) {
-            const receipt = receipts.find(r => r.id === id);
-            const person = people.find(p => p.id === String(receipt.personId));
-            const name = person ? person.name : 'حساب محذوف';
-            const isKabid = receipt.type === 'قبض';
-            const docNo = receipt.docNo || 1000;
+        contactForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if(!currentUser) return;
+            const name = document.getElementById('contact-name').value.trim();
+            const type = document.getElementById('contact-type').value;
+
+            db.collection('contacts').add({
+                userId: currentUser.uid,
+                name: name,
+                type: type,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => { contactForm.reset(); })
+            .catch(err => alert("خطأ في حفظ الجهة: " + err.message));
+        });
+
+        function filterContactDropdown() {
+            const query = txContactSearch.value.trim().toLowerCase();
+            txContactSelect.innerHTML = '<option value="">-- يرجى اختيار جهة مسجلة من القائمة --</option>';
             
-            const formattedDate = receipt.date.replace(/-/g, '/');
-            const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-            const templateHtml = `
-                <div class="invoice-print-template" style="display: block;">
-                    <div style="text-align: center; margin-bottom: 25px;">
-                        <h2 style="font-size: 1.35rem; font-weight: 700; color: #1e293b; margin: 0;">دفتر الحسابات العام</h2>
-                    </div>
-                    <div style="border-top: 1px dashed #cbd5e1; margin-bottom: 25px;"></div>
-                    <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 25px; padding: 0 5px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">رقم الوصل:</span>
-                            <span style="font-size: 0.95rem; font-weight: 700; color: #2563eb;">#${docNo}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">طبيعة السند:</span>
-                            <span style="font-size: 0.9rem; font-weight: 600;">${isKabid ? 'قبض مالي (+)' : 'صرف مالي (-)'}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">الاسم:</span>
-                            <span style="font-size: 0.9rem; font-weight: 700;">${name}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">البيان:</span>
-                            <span style="font-size: 0.9rem; color: #334155;">${receipt.details}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">التاريخ:</span>
-                            <span style="font-size: 0.85rem; color: #475569;">${formattedDate} – ${currentTime}</span>
-                        </div>
-                    </div>
-                    <div style="border-top: 1px dashed #cbd5e1; margin-bottom: 20px;"></div>
-                    <div style="background-color: #f8fafc; border: 1px solid #f1f5f9; border-radius: 0.75rem; padding: 16px; text-align: center;">
-                        <p style="font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0;">${formatMoney(receipt.amount)}</p>
-                    </div>
-                </div>
-            `;
-
-            const container = document.getElementById('printCaptureContainer');
-            container.innerHTML = templateHtml;
-            const elementToCapture = container.querySelector('.invoice-print-template');
-
-            html2canvas(elementToCapture, { backgroundColor: '#ffffff', scale: 3, logging: false, useCORS: true }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `وصل_رقم_${docNo}.jpg`;
-                link.href = canvas.toDataURL('image/jpeg', 1.0);
-                link.click();
-                container.innerHTML = '';
-            });
-        }
-
-        function renderAll() {
-            const searchInput = document.getElementById('searchInput');
-            const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
-            
-            const filterTypeElement = document.getElementById('filterType');
-            const filterType = filterTypeElement ? filterTypeElement.value : 'all';
-
-            let totalRec = 0;
-            let totalExp = 0;
-            
-            receipts.forEach(r => {
-                if(r.type === 'قبض') totalRec += Number(r.amount);
-                else totalExp += Number(r.amount);
+            const matchedContacts = contacts.filter(c => c.name.toLowerCase().includes(query));
+            matchedContacts.forEach(data => {
+                const opt = document.createElement('option');
+                opt.value = data.id;
+                opt.textContent = `${data.name} (${data.type === 'client' ? 'زبون' : 'مجهز'})`;
+                txContactSelect.appendChild(opt);
             });
 
-            document.getElementById('totalReceipts').innerText = formatMoney(totalRec);
-            document.getElementById('totalExpenses').innerText = formatMoney(totalExp);
-            document.getElementById('finalBalance').innerText = formatMoney(totalRec - totalExp);
+            if (matchedContacts.length === 1 && query !== '') {
+                txContactSelect.selectedIndex = 1;
+            }
+        }
 
-            const filteredPeople = people.filter(p => p.name.toLowerCase().includes(searchVal));
-            document.getElementById('peopleCount').innerText = filteredPeople.length;
-            
-            const peopleContainer = document.getElementById('peopleContainer');
-            peopleContainer.innerHTML = filteredPeople.map(p => {
-                let pBalance = 0;
-                receipts.forEach(r => {
-                    if(String(r.personId) === String(p.id)) {
-                        if(r.type === 'قبض') pBalance += Number(r.amount);
-                        else pBalance -= Number(r.amount);
-                    }
+        function startRealtimeListeners() {
+            unsubscribeContacts = db.collection('contacts')
+                .where('userId', '==', currentUser.uid)
+                .onSnapshot(snapshot => {
+                    contacts = [];
+                    snapshot.forEach(doc => contacts.push({ id: doc.id, ...doc.data() }));
+                    filterContactDropdown();
+                    updateUI();
+                }, error => {
+                    console.error("Firestore Contacts Error:", error);
+                    alert("خطأ في صلاحيات قراءة الجهات من Firebase: " + error.message);
+                    updateUI();
                 });
 
-                let balanceText = "";
-                if(pBalance > 0) balanceText = `له ${formatMoney(Math.abs(pBalance))}`;
-                else if(pBalance < 0) balanceText = `عليه ${formatMoney(Math.abs(pBalance))}`;
-                else balanceText = "متوازن 0 د.ع";
-
-                return `
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-start">
-                        <div class="flex gap-1">
-                            <button onclick="deletePerson('${p.id}')" class="w-7 h-7 text-red-500 hover:bg-red-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-trash-can text-xs"></i></button>
-                            <button onclick="openPersonModal('${p.role}', '${p.id}')" class="w-7 h-7 text-gray-500 hover:bg-gray-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-pen-to-square text-xs"></i></button>
-                        </div>
-                        <div class="text-right">
-                            <div class="flex items-center gap-1.5 justify-end mb-1">
-                                <span class="${p.role === 'customer' ? 'bg-cyan-50 text-cyan-600' : 'bg-purple-50 text-purple-600'} text-[10px] font-semibold px-1.5 py-0.5 rounded-md">${p.role === 'customer' ? 'زبون' : 'مجهز'}</span>
-                                <h3 class="font-bold text-gray-800 text-sm md:text-base">${p.name}</h3>
-                            </div>
-                            <p class="text-[11px] text-gray-500 flex items-center gap-1 justify-end" style="direction: ltr;">${p.phone || 'بلا هاتف'} <i class="fa-solid fa-phone text-[9px]"></i></p>
-                            <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1 justify-end">${p.address || 'بلا عنوان'} <i class="fa-solid fa-location-dot text-[9px]"></i></p>
-                            <p class="text-xs font-bold ${pBalance >= 0 ? 'text-emerald-600' : 'text-red-600'} mt-2">الرصيد: ${balanceText}</p>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            const filteredReceipts = receipts.filter(r => {
-                const person = people.find(p => p.id === String(r.personId));
-                const pName = person ? person.name.toLowerCase() : '';
-                const matchesSearch = pName.includes(searchVal) || String(r.docNo).includes(searchVal) || r.details.toLowerCase().includes(searchVal);
-                const matchesType = filterType === 'all' || r.type === filterType;
-                return matchesSearch && matchesType;
-            }).reverse();
-
-            document.getElementById('receiptsCount').innerText = filteredReceipts.length;
-            const receiptsContainer = document.getElementById('receiptsContainer');
-            
-            receiptsContainer.innerHTML = filteredReceipts.map(r => {
-                const person = people.find(p => p.id === String(r.personId));
-                const name = person ? person.name : 'حساب محذوف';
-                const isKabid = r.type === 'قبض';
-                const currentDocNo = r.docNo || 1000;
-
-                return `
-                    <div id="receipt-card-${r.id}" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3 transition hover:bg-gray-50/50">
-                        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-                            <span class="text-base md:text-xl font-bold ${isKabid ? 'text-emerald-600' : 'text-pink-600'} font-sans">${isKabid ? '+' : '-'} ${formatMoney(r.amount)}</span>
-                            <div class="action-buttons flex gap-1">
-                                <button onclick="deleteReceipt('${r.id}')" class="w-7 h-7 text-red-500 hover:bg-red-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-trash-can text-xs"></i></button>
-                                <button onclick="openReceiptModal('${r.id}')" class="w-7 h-7 text-gray-500 hover:bg-gray-50 rounded-lg flex items-center justify-center transition border border-gray-100"><i class="fa-regular fa-pen-to-square text-xs"></i></button>
-                                <button onclick="exportInvoiceImage('${r.id}')" class="w-7 h-7 text-[#0284c7] hover:bg-sky-50 rounded-lg flex items-center justify-center transition border border-gray-100" title="تحميل كصورة"><i class="fa-solid fa-download text-xs"></i></button>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-                            <div class="text-right">
-                                <div class="flex items-center gap-1.5 justify-end">
-                                    <span class="text-[10px] text-gray-400 font-mono">#${currentDocNo}</span>
-                                    <span class="text-[10px] ${isKabid ? 'bg-emerald-50 text-emerald-600' : 'bg-pink-50 text-pink-600'} px-1.5 py-0.5 rounded font-semibold">وصل ${r.type}</span>
-                                    <h4 class="font-bold text-gray-800 text-sm md:text-base">${name}</h4>
-                                </div>
-                                <p class="text-[11px] text-gray-400 mt-0.5 font-sans">${r.date.replace(/-/g, '/')} – البيان: ${r.details}</p>
-                            </div>
-                            <div class="w-9 h-9 ${isKabid ? 'bg-emerald-50 text-emerald-600' : 'bg-pink-50 text-pink-600'} rounded-full flex items-center justify-center text-lg flex-shrink-0">
-                                <i class="fa-solid ${isKabid ? 'fa-circle-arrow-down' : 'fa-circle-arrow-up'}"></i>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            unsubscribeTx = db.collection('transactions')
+                .where('userId', '==', currentUser.uid)
+                .onSnapshot(snapshot => {
+                    transactions = [];
+                    snapshot.forEach(doc => transactions.push({ id: doc.id, ...doc.data() }));
+                    transactions.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                    updateUI();
+                }, error => {
+                    console.error("Firestore Transactions Error:", error);
+                    alert("خطأ في قراءة السندات من Firebase: " + error.message);
+                    updateUI();
+                });
         }
+
+        function formatMoney(num) { return Number(num).toLocaleString('en-US') + ' د.ع'; }
+
+        function updateUI() {
+            let totalInc = 0, totalExp = 0;
+            const contactBalances = {};
+
+            contacts.forEach(c => contactBalances[c.id] = { name: c.name, type: c.type, net: 0 });
+
+            transactions.forEach(tx => {
+                const amt = Number(tx.amount);
+                if (tx.type === 'income') totalInc += amt; else totalExp += amt;
+
+                if (contactBalances[tx.contactId]) {
+                    if (tx.type === 'income') {
+                        contactBalances[tx.contactId].net += amt;
+                    } else {
+                        contactBalances[tx.contactId].net -= amt;
+                    }
+                }
+            });
+
+            totalBalance.textContent = formatMoney(totalInc - totalExp);
+            totalIncome.textContent = formatMoney(totalInc);
+            totalExpense.textContent = formatMoney(totalExp);
+
+            ledgerRows.innerHTML = '';
+            const searchLedgerVal = searchContactLedger.value.trim().toLowerCase();
+            let renderedContactsCount = 0;
+
+            if(contacts.length === 0) {
+                ledgerRows.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">لم يتم تعريف جهات بعد</td></tr>';
+            } else {
+                Object.keys(contactBalances).forEach(id => {
+                    const c = contactBalances[id];
+                    if (searchLedgerVal && !c.name.toLowerCase().includes(searchLedgerVal)) return; 
+
+                    renderedContactsCount++;
+                    const tr = document.createElement('tr');
+                    let balanceColor = 'var(--text)';
+                    if (c.net > 0) balanceColor = 'var(--primary)';
+                    else if (c.net < 0) balanceColor = 'var(--danger)';
+
+                    tr.innerHTML = `
+                        <td><strong>${c.name}</strong></td>
+                        <td><span class="badge ${c.type}">${c.type === 'client' ? 'زبون' : 'مجهز'}</span></td>
+                        <td style="color:${balanceColor}; font-weight:700;" dir="ltr">${formatMoney(c.net)}</td>
+                        <td><button style="color:var(--primary); background:none; border:none; cursor:pointer; font-weight:700;" onclick="setContactFilter('${id}')">عرض الوصولات</button></td>
+                    `;
+                    ledgerRows.appendChild(tr);
+                });
+
+                if(renderedContactsCount === 0) {
+                    ledgerRows.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:10px;">لا توجد جهة مطابقة لاسم البحث الحالي.</td></tr>';
+                }
+            }
+
+            txList.innerHTML = '';
+            const searchVal = searchReceipt.value.trim();
+            const searchNameVal = searchByName.value.trim().toLowerCase();
+
+            if (selectedContactFilter) {
+                const foundC = contacts.find(x => x.id === selectedContactFilter);
+                filterIndicator.style.display = 'block';
+                filterIndicator.innerHTML = `<div class="filter-badge-active" onclick="clearContactFilter()">❌ كشف تصفية: ${foundC ? foundC.name : ''} (اضغط هنا لإلغاء القفل)</div>`;
+            } else {
+                filterIndicator.style.display = 'none';
+            }
+
+            const filtered = transactions.filter(tx => {
+                if (selectedContactFilter && tx.contactId !== selectedContactFilter) return false;
+                if (searchVal && !tx.receiptNo?.toString().includes(searchVal)) return false;
+                if (searchNameVal && (!tx.contactName || !tx.contactName.toLowerCase().includes(searchNameVal))) return false;
+                return true;
+            });
+
+            if(filtered.length === 0) {
+                txList.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:15px; font-size:13px;">لا توجد سندات أو وصولات مطابقة لعناصر الفلترة.</p>';
+                return;
+            }
+
+            filtered.forEach(tx => {
+                const item = document.createElement('div');
+                item.className = `transaction-item ${tx.type}`;
+                item.innerHTML = `
+                    <div class="item-main">
+                        <div class="item-details">
+                            <h4>${tx.contactName || 'جهة غير معرفة'} <span class="badge client">وصل #${tx.receiptNo}</span></h4>
+                            <p>${tx.desc}</p>
+                        </div>
+                        <div style="font-weight:700; font-size:16px;" class="${tx.type === 'income' ? 'income' : 'expense'}">${tx.type === 'income' ? '+' : '-'} ${Number(tx.amount).toLocaleString('en-US')} د.ع</div>
+                    </div>
+                    <div class="item-meta">
+                        <span>${tx.date}</span>
+                        <div class="actions">
+                            <button class="btn-action btn-pdf" onclick="generatePDF('${tx.id}')">وصل PDF</button>
+                            <button class="btn-action btn-edit" onclick="triggerEditMode('${tx.id}')">تعديل</button>
+                            <button class="btn-action btn-delete" onclick="deleteTx('${tx.id}')">حذف</button>
+                        </div>
+                    </div>
+                `;
+                txList.appendChild(item);
+            });
+        }
+
+        function setContactFilter(id) { 
+            selectedContactFilter = id; 
+            switchView('archive'); 
+            updateUI(); 
+            txList.scrollIntoView({ behavior: 'smooth' }); 
+        }
+        function clearContactFilter() { selectedContactFilter = null; updateUI(); }
+        
+        searchReceipt.addEventListener('input', updateUI);
+        searchByName.addEventListener('input', updateUI);
+        searchContactLedger.addEventListener('input', updateUI);
+
+        // دالة تنظيف رموز HTML لضمان عدم توقف إرسال رسائل تليجرام
+        function escapeHtml(text) {
+            return text ? String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+        }
+
+        function sendTelegramNotification(tx) {
+            if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN.includes("ضع_هنا")) return;
+
+            const safeContactName = escapeHtml(tx.contactName);
+            const safeDesc = escapeHtml(tx.desc);
+            const safeCompany = cachedUserProfile && cachedUserProfile.company ? escapeHtml(cachedUserProfile.company) : '';
+
+            const typeText = tx.type === 'income' ? '🟢 <b>وصل قبض مالي (+)</b>' : '🔴 <b>وصل صرف مالي (-)</b>';
+            const companyName = safeCompany ? `💼 <b>المصدر:</b> ${safeCompany}\n` : '';
+            
+            const message = `
+${typeText}
+-------------------------------------
+🧾 <b>رقم الوصل:</b> #${tx.receiptNo}
+👤 <b>الجهة / الاسم:</b> ${safeContactName}
+📝 <b>البيان والوصف:</b> ${safeDesc}
+📅 <b>التاريخ والوقت:</b> ${tx.date}
+${companyName}-------------------------------------
+💰 <b>المبلغ الصافي:</b> <u>${Number(tx.amount).toLocaleString('en-US')} دينار عراقي</u>
+            `.trim();
+
+            TELEGRAM_CHAT_IDS.forEach(chatId => {
+                if (chatId && !chatId.includes("ضع_هنا")) {
+                    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (!data.ok) {
+                            console.error(`❌ خطأ تليجرام للآيدي ${chatId}:`, data.description);
+                        } else {
+                            console.log(`✅ تم إرسال التقرير بنجاح للآيدي ${chatId}`);
+                        }
+                    })
+                    .catch(err => console.error("فشل اتصال الشبكة لتليجرام للآيدي " + chatId + ":", err));
+                }
+            });
+        }
+
+        txForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const type = document.querySelector('input[name="tx-type"]:checked').value;
+            const contactId = txContactSelect.value;
+            const selectedContactObj = contacts.find(c => c.id === contactId);
+            const contactName = selectedContactObj ? selectedContactObj.name : '';
+            const desc = document.getElementById('tx-desc').value;
+            
+            const rawAmount = document.getElementById('tx-amount').value.replace(/,/g, '');
+            const amount = Number(rawAmount);
+
+            if (!contactId) {
+                alert("يرجى اختيار جهة مسجلة من القائمة.");
+                return;
+            }
+
+            if (!amount || isNaN(amount) || amount <= 0) {
+                alert("يرجى كتابة مبلغ مالي صحيح.");
+                return;
+            }
+
+            if (editingTxId) {
+                db.collection('transactions').doc(editingTxId).update({
+                    type, contactId, contactName, desc, amount: amount,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => cancelEditMode());
+            } else {
+                const receiptNo = Math.floor(100000 + Math.random() * 900000);
+                const now = new Date();
+                const date = now.toLocaleDateString('en-US') + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+
+                const newTxData = {
+                    userId: currentUser.uid, type, contactId, contactName, desc, amount: amount, receiptNo, date,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                db.collection('transactions').add(newTxData)
+                .then(() => { 
+                    sendTelegramNotification(newTxData);
+                    txForm.reset(); 
+                    txContactSearch.value = '';
+                    filterContactDropdown();
+                    document.getElementById('type-income').checked = true; 
+                });
+            }
+        });
+
+        function triggerEditMode(id) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+            editingTxId = id;
+            switchView('main'); 
+            txContactSearch.value = '';
+            filterContactDropdown();
+            txContactSelect.value = tx.contactId || '';
+            document.getElementById('tx-desc').value = tx.desc;
+            
+            document.getElementById('tx-amount').value = Number(tx.amount).toLocaleString('en-US');
+            document.getElementById(tx.type === 'income' ? 'type-income' : 'type-expense').checked = true;
+
+            formTitle.innerHTML = `⚙️ تعديل بيانات السند <span style="color:var(--primary)">#${tx.receiptNo}</span>`;
+            btnTxSubmit.textContent = "تحديث البيانات";
+            btnTxSubmit.style.background = "var(--success)";
+            btnTxCancel.style.display = "block";
+            document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelEditMode() {
+            editingTxId = null; txForm.reset();
+            txContactSearch.value = '';
+            filterContactDropdown();
+            document.getElementById('type-income').checked = true;
+            formTitle.textContent = "تسجيل عملية ماليّة جديدة";
+            btnTxSubmit.textContent = "حفظ السند سحابياً";
+            btnTxSubmit.style.background = "var(--primary)";
+            btnTxCancel.style.display = "none";
+        }
+
+        function deleteTx(id) {
+            if(confirm('هل تريد حذف هذا الوصل نهائياً؟')) {
+                if(editingTxId === id) cancelEditMode();
+                db.collection('transactions').doc(id).delete();
+            }
+        }
+
+        function generatePDF(id) {
+            const tx = transactions.find(t => t.id === id); if(!tx) return;
+            const oldFrame = document.getElementById('print-iframe'); if(oldFrame) oldFrame.remove();
+
+            const iframe = document.createElement('iframe');
+            iframe.id = 'print-iframe'; iframe.style.position = 'fixed'; iframe.style.width = '0'; iframe.style.height = '0'; iframe.style.border = 'none';
+            document.body.appendChild(iframe);
+
+            let userHeaderHtml = '';
+            if (cachedUserProfile && cachedUserProfile.company) {
+                userHeaderHtml = `<p style="font-size: 13px; color: #00ff66; margin: 4px 0 0 0; font-weight: 700;">الجهة القابضة: ${cachedUserProfile.company}</p>`;
+            }
+
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>وصل مالي #${tx.receiptNo}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Cairo', sans-serif; padding: 20px; background: #fff; direction: rtl; }
+                        .receipt-box { max-width: 400px; margin: 0 auto; padding: 20px; border: 2px dashed #00ff66; border-radius: 8px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="receipt-box">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <h2 style="font-size: 18px; margin: 0; color:#030804;">نظام القبض والصرف السحابي</h2>
+                            ${userHeaderHtml}
+                        </div>
+                        <div style="border-bottom: 1px dashed #ccc; margin-bottom: 15px;"></div>
+                        <table style="width: 100%; font-size: 14px; line-height: 2;">
+                            <tr><td style="font-weight: bold;">رقم الوصل:</td><td style="color: #00ff66; font-weight:bold;">#${tx.receiptNo}</td></tr>
+                            <tr><td style="font-weight: bold;">طبيعة السند:</td><td>${tx.type === 'income' ? 'قبض مالي (+)' : 'صرف مالي (-)'}</td></tr>
+                            <tr><td style="font-weight: bold;">الجهة/الاسم:</td><td><strong>${tx.contactName}</strong></td></tr>
+                            <tr><td style="font-weight: bold;">البيان:</td><td>${tx.desc}</td></tr>
+                            <tr><td style="font-weight: bold;">التاريخ:</td><td style="font-size:12px;">${tx.date}</td></tr>
+                        </table>
+                        <div style="border-bottom: 1px dashed #ccc; margin: 15px 0;"></div>
+                        <div style="background: #030804; color:#fff; padding: 10px; border-radius: 6px; text-align: center;">
+                            <span style="font-size: 12px; color: #76997d; display:block;">المبلغ الإجمالي</span>
+                            <strong style="font-size: 20px; color:#00ff66;">${Number(tx.amount).toLocaleString('en-US')} د.ع</strong>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            doc.close();
+            setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); }, 500);
+        }
+
+        function checkAppInstallation() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            if (!isStandalone) {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                document.getElementById('install-text-msg').innerHTML = isIOS 
+                    ? "📲 لتثبيت المحفظة: اضغط على زر <strong>المشاركة</strong> أسفل سفاري ثم <strong>إضافة إلى الشاشة الرئيسية</strong>."
+                    : "📲 يرجى تثبيت المحفظة على سطح الجوال كـ تطبيق مستقل للوصول السريع الآمن.";
+                document.getElementById('install-box').style.display = 'flex';
+            }
+        }
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); window.deferredPrompt = e;
+            document.getElementById('btn-pwa-install').style.display = 'inline-block';
+            document.getElementById('install-box').style.display = 'flex';
+        });
+        document.getElementById('btn-pwa-install')?.addEventListener('click', () => { window.deferredPrompt?.prompt(); });
+        function closeInstallPrompt() { document.getElementById('install-box').style.display = 'none'; }
+        window.addEventListener('load', checkAppInstallation);
     </script>
 </body>
 </html>
