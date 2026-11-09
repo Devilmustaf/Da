@@ -131,10 +131,11 @@
         header h1 { font-size: 20px; color: var(--primary); font-weight: 800; text-shadow: 0 0 8px var(--primary-glow); }
 
         .user-info { font-size: 12px; color: var(--text-muted); text-align: left; }
-        .header-actions { display: flex; gap: 8px; align-items: center; margin-top: 4px; justify-content: flex-end; }
+        .header-actions { display: flex; gap: 6px; align-items: center; margin-top: 4px; justify-content: flex-end; flex-wrap: wrap; }
         
         .btn-logout { background: none; border: none; color: var(--danger); font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: underline; }
         .btn-reset-app { background: rgba(255, 51, 102, 0.15); color: #ff80a0; border: 1px solid #ff3366; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .btn-summary-top { background: rgba(0, 255, 102, 0.15); color: var(--primary); border: 1px solid var(--primary); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
 
         .balance-card { background: var(--surface); border-radius: 16px; padding: 20px; text-align: center; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,255,102,0.08); }
         .balance-card span { color: var(--text-muted); font-size: 14px; }
@@ -272,6 +273,7 @@
             <div class="user-info">
                 <span id="user-email-display">جاري جلب البيانات...</span><br>
                 <div class="header-actions">
+                    <button class="btn-summary-top" onclick="sendDailySummaryManual()">📊 ملخص يومي</button>
                     <button class="btn-reset-app" onclick="resetAppDatabase()">⚠️ تصفير الحسابات</button>
                     <button class="btn-logout" onclick="logoutUser()">تسجيل خروج</button>
                 </div>
@@ -307,6 +309,19 @@
                     </div>
                     <button type="submit" class="btn-submit" style="padding: 10px; font-size: 13px;">حفظ وتثبيت الجهة</button>
                 </form>
+            </div>
+
+            <!-- قسم النسخ الاحتياطي والاستعادة -->
+            <div class="form-section">
+                <h3>💾 النسخ الاحتياطي واستعادة البيانات</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">قم بتنزيل نسخة احتياطية لبياناتك وحساباتك بصيغة JSON، أو استعادتها ودمجها متى شئت.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" class="btn-submit" style="flex: 1; background: var(--surface-card); border: 1px solid var(--primary); color: var(--primary); padding: 10px; font-size: 13px;" onclick="exportBackupData()">📥 تنزيل نسخة احتياطية</button>
+                    <label class="btn-submit" style="flex: 1; background: var(--primary); color: var(--background); padding: 10px; font-size: 13px; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px var(--primary-glow);">
+                        📤 استعادة نسخة
+                        <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importBackupData(event)">
+                    </label>
+                </div>
             </div>
 
             <div class="form-section">
@@ -400,8 +415,6 @@
 
     <script>
         const TELEGRAM_BOT_TOKEN = "8517548409:AAFIUHaeRYLiiPa0pwlFmABn6sGhnF64D4Y"; 
-        
-        // تم الاعتماد حصراً على الآيدي المطلوب وإزالة أي آيدي آخر
         const TELEGRAM_CHAT_IDS = [
             "636630537"
         ];
@@ -539,6 +552,135 @@
             } catch (err) {
                 alert("حدث خطأ أثناء عملية تصفير المبالغ: " + err.message);
             }
+        }
+
+        // وظيفة إرسال الملخص المالي اليومي يدوياً عبر الزر العلوي
+        function sendDailySummaryManual() {
+            if (!currentUser) return;
+            let totalInc = 0, totalExp = 0;
+            transactions.forEach(tx => {
+                const amt = Number(tx.amount);
+                if (tx.type === 'income') totalInc += amt; else totalExp += amt;
+            });
+            const netBalance = totalInc - totalExp;
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US') + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+            const companyName = (cachedUserProfile && cachedUserProfile.company) ? `💼 <b>المصدر:</b> ${escapeHtml(cachedUserProfile.company)}\n` : '';
+
+            const message = `
+📊 <b>الملخص المالي العام للصندوق</b>
+-------------------------------------
+📅 <b>التاريخ والوقت:</b> ${dateStr}
+${companyName}🟢 <b>إجمالي المقبوضات (+):</b> <u>${Number(totalInc).toLocaleString('en-US')} د.ع</u>
+🔴 <b>إجمالي المصاريف (-):</b> <u>${Number(totalExp).toLocaleString('en-US')} د.ع</u>
+-------------------------------------
+💰 <b>رصيد الصندوق الحالي:</b> <u>${Number(netBalance).toLocaleString('en-US')} د.ع</u>
+👤 <b>عدد الجهات المسجلة:</b> ${contacts.length}
+🧾 <b>عدد السندات والوصولات:</b> ${transactions.length}
+            `.trim();
+
+            TELEGRAM_CHAT_IDS.forEach(chatId => {
+                if (chatId && !chatId.includes("ضع_هنا")) {
+                    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.ok) {
+                            alert("✅ تم إرسال الملخص المالي إلى تليجرام بنجاح!");
+                        } else {
+                            alert("❌ فشل إرسال الملخص: " + data.description);
+                        }
+                    })
+                    .catch(err => alert("خطأ في الاتصال: " + err.message));
+                }
+            });
+        }
+
+        // تصدير النسخة الاحتياطية كملف JSON
+        function exportBackupData() {
+            if (!currentUser) return;
+            const backupData = {
+                version: "1.0",
+                exportDate: new Date().toISOString(),
+                userEmail: currentUser.email,
+                company: cachedUserProfile?.company || "",
+                contacts: contacts,
+                transactions: transactions
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `wallet_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // استعادة النسخة الاحتياطية ورفعها للسحابة
+        async function importBackupData(event) {
+            const file = event.target.files[0];
+            if (!file || !currentUser) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const content = JSON.parse(e.target.result);
+                    if (!content.contacts || !content.transactions) {
+                        alert("❌ ملف النسخ الاحتياطي غير صالح أو تالف.");
+                        return;
+                    }
+
+                    const confirmRestore = confirm(`⚠️ تنبيه الاستعادة:\n\nسيتم استعادة ${content.contacts.length} جهة و ${content.transactions.length} وصل مالي.\nهل تريد رفع هذه البيانات ودمجها مع حسابك الحالي؟`);
+                    if (!confirmRestore) return;
+
+                    const batch = db.batch();
+                    const contactIdMap = {};
+
+                    for (const c of content.contacts) {
+                        const oldId = c.id;
+                        const newContactRef = db.collection('contacts').doc();
+                        contactIdMap[oldId] = newContactRef.id;
+                        
+                        const contactPayload = {
+                            userId: currentUser.uid,
+                            name: c.name || "بدون اسم",
+                            type: c.type || "client",
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+                        batch.set(newContactRef, contactPayload);
+                    }
+
+                    for (const tx of content.transactions) {
+                        const newTxRef = db.collection('transactions').doc();
+                        const mappedContactId = contactIdMap[tx.contactId] || tx.contactId;
+                        
+                        const txPayload = {
+                            userId: currentUser.uid,
+                            type: tx.type || "income",
+                            contactId: mappedContactId,
+                            contactName: tx.contactName || "",
+                            desc: tx.desc || "",
+                            amount: Number(tx.amount) || 0,
+                            receiptNo: tx.receiptNo || Math.floor(100000 + Math.random() * 900000),
+                            date: tx.date || new Date().toLocaleDateString(),
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+                        batch.set(newTxRef, txPayload);
+                    }
+
+                    await batch.commit();
+                    alert("✅ تم استعادة النسخة الاحتياطية ورفعها إلى السحابة بنجاح!");
+                    document.getElementById('import-file').value = "";
+                } catch (err) {
+                    alert("❌ حدث خطأ أثناء قراءة الملف: " + err.message);
+                    document.getElementById('import-file').value = "";
+                }
+            };
+            reader.readAsText(file);
         }
 
         auth.onAuthStateChanged((user) => {
@@ -738,7 +880,6 @@
         searchByName.addEventListener('input', updateUI);
         searchContactLedger.addEventListener('input', updateUI);
 
-        // دالة تنظيف رموز HTML لضمان عدم توقف إرسال رسائل تليجرام
         function escapeHtml(text) {
             return text ? String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
         }
@@ -770,16 +911,7 @@ ${companyName}-------------------------------------
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (!data.ok) {
-                            console.error(`❌ خطأ تليجرام للآيدي ${chatId}:`, data.description);
-                        } else {
-                            console.log(`✅ تم إرسال التقرير بنجاح للآيدي ${chatId}`);
-                        }
-                    })
-                    .catch(err => console.error("فشل اتصال الشبكة لتليجرام للآيدي " + chatId + ":", err));
+                    }).catch(err => console.error("فشل تليجرام للآيدي " + chatId + ":", err));
                 }
             });
         }
