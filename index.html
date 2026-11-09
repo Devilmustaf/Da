@@ -4,15 +4,16 @@
     <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تطبيق القبض والصرف الاحترافي - نظام التبويبات والبحث المطور</title>
+    <title>تطبيق القبض والصرف الاحترافي</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="المحفظة">
+    <meta name="apple-mobile-web-app-title" content="القبض والصرف">
     <meta name="apple-mobile-web-app-status-bar-style" content="#030804">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <link rel="apple-touch-icon" href="https://img.icons8.com/fluent/512/wallet.png">
-    <link rel="icon" type="image/png" href="https://img.icons8.com/fluent/512/wallet.png">
+    <!-- أيقونة تطبيق احترافية ونظيفة تمنع ظهور شارة المتصفح -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%2309120a'/><path d='M140 180h232v180H140z' fill='none'/><path d='M384 140H128c-17.6 0-32 14.4-32 32v200c0 17.6 14.4 32 32 32h256c17.6 0 32-14.4 32-32V172c0-17.6-14.4-32-32-32zm-16 160H296v-40h72v40z' fill='%2300ff66'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%2309120a'/><path d='M384 140H128c-17.6 0-32 14.4-32 32v200c0 17.6 14.4 32 32 32h256c17.6 0 32-14.4 32-32V172c0-17.6-14.4-32-32-32zm-16 160H296v-40h72v40z' fill='%2300ff66'/></svg>">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,12 +21,12 @@
     
     <style>
         :root {
-            --primary: #00ff66; /* أخضر ماتركس نيون مضيء */
+            --primary: #00ff66;
             --primary-hover: #00d957;
             --primary-glow: rgba(0, 255, 102, 0.35);
             --success: #00e676;
             --danger: #ff3366;
-            --background: #030804; /* أسود داكن عميق بنغمة ماتركس */
+            --background: #030804;
             --surface: #09120a;
             --surface-card: #0e1a10;
             --border: #17331b;
@@ -530,7 +531,6 @@
             }
         }
 
-        // دالة تصفير المبالغ والوصولات فقط مع الحفاظ على الأسماء والجهات المخزنة مسبقاً
         async function resetAppDatabase() {
             if (!currentUser) return;
             const confirm1 = confirm("⚠️ تنبيه!\n\nهل أنت متأكد من رغبتك في تصفير المبالغ فقط؟\nسيتم مسح جميع وصولات القبض والصرف وتصفير الحسابات نهائياً مع الحفاظ الكامل على أسماء ورصيد الجهات المسجلة!");
@@ -554,7 +554,6 @@
             }
         }
 
-        // وظيفة إرسال الملخص المالي اليومي يدوياً عبر الزر العلوي
         function sendDailySummaryManual() {
             if (!currentUser) return;
             let totalInc = 0, totalExp = 0;
@@ -599,7 +598,6 @@ ${companyName}🟢 <b>إجمالي المقبوضات (+):</b> <u>${Number(total
             });
         }
 
-        // تصدير النسخة الاحتياطية كملف JSON
         function exportBackupData() {
             if (!currentUser) return;
             const backupData = {
@@ -620,7 +618,6 @@ ${companyName}🟢 <b>إجمالي المقبوضات (+):</b> <u>${Number(total
             downloadAnchor.remove();
         }
 
-        // استعادة النسخة الاحتياطية ورفعها للسحابة
         async function importBackupData(event) {
             const file = event.target.files[0];
             if (!file || !currentUser) return;
