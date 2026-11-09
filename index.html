@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="#030804">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <!-- أيقونة احترافية ونظيفة متوافقة تماماً مع الأندرويد والآيفون -->
+    <!-- أيقونة مستقرة ونظيفة -->
     <link rel="icon" type="image/png" href="https://img.icons8.com/fluent/512/wallet.png">
     <link rel="apple-touch-icon" href="https://img.icons8.com/fluent/512/wallet.png">
 
@@ -553,7 +553,7 @@
             }
         }
 
-        // دالة إرسال تليجرام محسنة ومضمونة 100%
+        // دالة تليجرام محسنة تعمل بشكل متزامن وآمن
         async function sendTelegramMessage(text) {
             for (const chatId of TELEGRAM_CHAT_IDS) {
                 if (chatId && !chatId.includes("ضع_هنا")) {
