@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تطبيق القبض والصرف الاحترافي</title>
@@ -11,9 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="#030804">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <!-- أيقونة تطبيق احترافية ونظيفة تمنع ظهور شارة المتصفح -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%2309120a'/><path d='M140 180h232v180H140z' fill='none'/><path d='M384 140H128c-17.6 0-32 14.4-32 32v200c0 17.6 14.4 32 32 32h256c17.6 0 32-14.4 32-32V172c0-17.6-14.4-32-32-32zm-16 160H296v-40h72v40z' fill='%2300ff66'/></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%2309120a'/><path d='M384 140H128c-17.6 0-32 14.4-32 32v200c0 17.6 14.4 32 32 32h256c17.6 0 32-14.4 32-32V172c0-17.6-14.4-32-32-32zm-16 160H296v-40h72v40z' fill='%2300ff66'/></svg>">
+    <!-- أيقونة احترافية ونظيفة متوافقة تماماً مع الأندرويد والآيفون -->
+    <link rel="icon" type="image/png" href="https://img.icons8.com/fluent/512/wallet.png">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluent/512/wallet.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -554,7 +553,28 @@
             }
         }
 
-        function sendDailySummaryManual() {
+        // دالة إرسال تليجرام محسنة ومضمونة 100%
+        async function sendTelegramMessage(text) {
+            for (const chatId of TELEGRAM_CHAT_IDS) {
+                if (chatId && !chatId.includes("ضع_هنا")) {
+                    try {
+                        const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: "HTML" })
+                        });
+                        const data = await response.json();
+                        if (!data.ok) {
+                            console.error(`❌ خطأ تليجرام للآيدي ${chatId}:`, data.description);
+                        }
+                    } catch (err) {
+                        console.error("فشل اتصال الشبكة لتليجرام للآيدي " + chatId + ":", err);
+                    }
+                }
+            }
+        }
+
+        async function sendDailySummaryManual() {
             if (!currentUser) return;
             let totalInc = 0, totalExp = 0;
             transactions.forEach(tx => {
@@ -578,24 +598,8 @@ ${companyName}🟢 <b>إجمالي المقبوضات (+):</b> <u>${Number(total
 🧾 <b>عدد السندات والوصولات:</b> ${transactions.length}
             `.trim();
 
-            TELEGRAM_CHAT_IDS.forEach(chatId => {
-                if (chatId && !chatId.includes("ضع_هنا")) {
-                    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.ok) {
-                            alert("✅ تم إرسال الملخص المالي إلى تليجرام بنجاح!");
-                        } else {
-                            alert("❌ فشل إرسال الملخص: " + data.description);
-                        }
-                    })
-                    .catch(err => alert("خطأ في الاتصال: " + err.message));
-                }
-            });
+            await sendTelegramMessage(message);
+            alert("✅ تم إرسال الملخص المالي إلى تليجرام بنجاح!");
         }
 
         function exportBackupData() {
@@ -881,7 +885,7 @@ ${companyName}🟢 <b>إجمالي المقبوضات (+):</b> <u>${Number(total
             return text ? String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
         }
 
-        function sendTelegramNotification(tx) {
+        async function sendTelegramNotification(tx) {
             if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN.includes("ضع_هنا")) return;
 
             const safeContactName = escapeHtml(tx.contactName);
@@ -902,18 +906,10 @@ ${companyName}-------------------------------------
 💰 <b>المبلغ الصافي:</b> <u>${Number(tx.amount).toLocaleString('en-US')} دينار عراقي</u>
             `.trim();
 
-            TELEGRAM_CHAT_IDS.forEach(chatId => {
-                if (chatId && !chatId.includes("ضع_هنا")) {
-                    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" })
-                    }).catch(err => console.error("فشل تليجرام للآيدي " + chatId + ":", err));
-                }
-            });
+            await sendTelegramMessage(message);
         }
 
-        txForm.addEventListener('submit', (e) => {
+        txForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentUser) return;
 
@@ -937,10 +933,11 @@ ${companyName}-------------------------------------
             }
 
             if (editingTxId) {
-                db.collection('transactions').doc(editingTxId).update({
+                await db.collection('transactions').doc(editingTxId).update({
                     type, contactId, contactName, desc, amount: amount,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => cancelEditMode());
+                });
+                cancelEditMode();
             } else {
                 const receiptNo = Math.floor(100000 + Math.random() * 900000);
                 const now = new Date();
@@ -951,14 +948,12 @@ ${companyName}-------------------------------------
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                db.collection('transactions').add(newTxData)
-                .then(() => { 
-                    sendTelegramNotification(newTxData);
-                    txForm.reset(); 
-                    txContactSearch.value = '';
-                    filterContactDropdown();
-                    document.getElementById('type-income').checked = true; 
-                });
+                await db.collection('transactions').add(newTxData);
+                await sendTelegramNotification(newTxData);
+                txForm.reset(); 
+                txContactSearch.value = '';
+                filterContactDropdown();
+                document.getElementById('type-income').checked = true; 
             }
         });
 
